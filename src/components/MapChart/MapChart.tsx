@@ -235,54 +235,73 @@ export function MapChart({
 						dangerouslySetInnerHTML={{__html: WORLD_INNER}}
 					/>
 					<g className="cui-map-chart__markers">
-						{enriched.map((e, i) => {
-							const b = bucket(e.datum.value);
-							const color = palette[b];
-							const isActive = activeIndex === i;
-							const r = isActive ? 7.5 : 6;
-							return (
-								<circle
-									key={e.country.iso}
-									ref={(el) => {
-										markerRefs.current[i] = el;
-									}}
-									cx={e.x}
-									cy={e.y}
-									r={r}
-									className={[
-										'cui-map-chart__marker',
-										isActive && 'is-active',
-									]
-										.filter(Boolean)
-										.join(' ')}
-									style={
-										{
-											'--cui-marker-fill': color,
-											'--cui-marker-delay': `${i * 25}ms`,
-										} as React.CSSProperties
-									}
-									tabIndex={0}
-									role="img"
-									aria-label={
-										e.datum.description ??
-										`${e.country.name}: ${e.datum.value}`
-									}
-									onFocus={() => setFocusIndex(i)}
-									onBlur={() =>
-										setFocusIndex((cur) =>
-											cur === i ? null : cur
-										)
-									}
-									onMouseEnter={() => setHoverIndex(i)}
-									onMouseLeave={() =>
-										setHoverIndex((cur) =>
-											cur === i ? null : cur
-										)
-									}
-									onKeyDown={(ev) => onMarkerKeyDown(ev, i)}
-								/>
-							);
-						})}
+						{
+							// SVG paint order is DOM order (no z-index).
+							// Render the active marker last so it sits on
+							// top of overlapping neighbours. Refs still
+							// index by data position so keyboard nav stays
+							// stable.
+							enriched
+								.map((_, i) => i)
+								.sort((a, b) => {
+									const aActive = activeIndex === a ? 1 : 0;
+									const bActive = activeIndex === b ? 1 : 0;
+									return aActive - bActive;
+								})
+								.map((i) => {
+									const e = enriched[i];
+									const b = bucket(e.datum.value);
+									const color = palette[b];
+									const isActive = activeIndex === i;
+									const r = isActive ? 7.5 : 6;
+									return (
+										<circle
+											key={e.country.iso}
+											ref={(el) => {
+												markerRefs.current[i] = el;
+											}}
+											cx={e.x}
+											cy={e.y}
+											r={r}
+											className={[
+												'cui-map-chart__marker',
+												isActive && 'is-active',
+											]
+												.filter(Boolean)
+												.join(' ')}
+											style={
+												{
+													'--cui-marker-fill': color,
+													'--cui-marker-delay': `${i * 25}ms`,
+												} as React.CSSProperties
+											}
+											tabIndex={0}
+											role="img"
+											aria-label={
+												e.datum.description ??
+												`${e.country.name}: ${e.datum.value}`
+											}
+											onFocus={() => setFocusIndex(i)}
+											onBlur={() =>
+												setFocusIndex((cur) =>
+													cur === i ? null : cur
+												)
+											}
+											onMouseEnter={() =>
+												setHoverIndex(i)
+											}
+											onMouseLeave={() =>
+												setHoverIndex((cur) =>
+													cur === i ? null : cur
+												)
+											}
+											onKeyDown={(ev) =>
+												onMarkerKeyDown(ev, i)
+											}
+										/>
+									);
+								})
+						}
 					</g>
 				</svg>
 				{active && (
