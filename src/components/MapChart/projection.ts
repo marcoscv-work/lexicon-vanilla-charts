@@ -15,11 +15,14 @@
 
 export const MAP_VIEWBOX = {width: 558, height: 282};
 
-const LON_OFFSET = 271; // x at lon = 0 (Greenwich meridian)
+// Offsets re-calibrated against Spain (lat 40.46, lon -3.75) → (256.625,
+// 108.471) in the SVG. Whole-map shift of (-8 px, +15 px) from the
+// previous origin; the per-hemisphere scales still match the artwork.
+const LON_OFFSET = 263; // x at lon = 0 (Greenwich meridian)
 const LON_SCALE_W = 1.7; // px per |deg| west of Greenwich
 const LON_SCALE_E = 1.45; // px per deg east of Greenwich
 
-const LAT_OFFSET = 140; // y at lat = 0 (equator)
+const LAT_OFFSET = 155; // y at lat = 0 (equator)
 const LAT_SCALE_N = 1.15; // px per deg north of equator
 const LAT_SCALE_S = 1.75; // px per |deg| south of equator
 
