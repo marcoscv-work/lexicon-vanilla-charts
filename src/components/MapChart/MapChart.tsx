@@ -37,6 +37,8 @@ export type MapColorScheme = 'blue' | 'categorical';
 
 export type MapChartFit = 'world' | 'data';
 
+export type MapChartLegend = 'scale' | 'list' | 'none';
+
 export interface MapChartProps {
 	data: MapDatum[];
 	/**
@@ -61,6 +63,17 @@ export interface MapChartProps {
 	 *   surrounding geographic context isn't lost.
 	 */
 	fit?: MapChartFit;
+	/**
+	 * Legend layout.
+	 *
+	 * - `scale` (default): a horizontal ramp under the canvas showing
+	 *   the colour buckets from "less" to "more".
+	 * - `list`: a per-country list to the right of the canvas (sorted
+	 *   by value, highest first) — same shape as the PieChart legend.
+	 *   Each row is clickable and focuses the matching marker.
+	 * - `none`: no legend.
+	 */
+	legend?: MapChartLegend;
 	/** Accessible name for the chart as a whole. */
 	title: string;
 	/** Optional accessible long description. */
@@ -118,6 +131,7 @@ export function MapChart({
 	scheme = 'blue',
 	steps = 5,
 	fit = 'world',
+	legend = 'scale',
 	title,
 	description,
 	animated = true,
@@ -254,11 +268,24 @@ export function MapChart({
 
 	const active = activeIndex != null ? enriched[activeIndex] : null;
 
+	const focusMarker = useCallback((idx: number) => {
+		markerRefs.current[idx]?.focus();
+	}, []);
+
+	// Per-country legend (sorted by value desc) for `legend="list"`.
+	const legendItems = useMemo(() => {
+		if (legend !== 'list') return [];
+		return enriched
+			.map((e, i) => ({...e, dataIndex: i}))
+			.sort((a, b) => b.datum.value - a.datum.value);
+	}, [enriched, legend]);
+
 	return (
 		<figure
 			className={[
 				'cui-map-chart',
 				`cui-map-chart--${scheme}`,
+				`cui-map-chart--legend-${legend}`,
 				motionOn && 'cui-map-chart--motion',
 				className,
 			]
@@ -273,7 +300,8 @@ export function MapChart({
 			<p id={descId} className="cui-sr-only">
 				{summary}
 			</p>
-			<div className="cui-map-chart__canvas">
+			<div className="cui-map-chart__body">
+				<div className="cui-map-chart__canvas">
 				<svg
 					viewBox={viewBox}
 					preserveAspectRatio="xMidYMid meet"
@@ -290,75 +318,90 @@ export function MapChart({
 						dangerouslySetInnerHTML={{__html: WORLD_INNER}}
 					/>
 					<g className="cui-map-chart__markers">
-						{
-							// SVG paint order is DOM order (no z-index).
-							// Render the active marker last so it sits on
-							// top of overlapping neighbours. Refs still
-							// index by data position so keyboard nav stays
-							// stable.
-							enriched
-								.map((_, i) => i)
-								.sort((a, b) => {
-									const aActive = activeIndex === a ? 1 : 0;
-									const bActive = activeIndex === b ? 1 : 0;
-									return aActive - bActive;
-								})
-								.map((i) => {
-									const e = enriched[i];
-									const b = bucket(e.datum.value);
-									const color = palette[b];
-									const isActive = activeIndex === i;
-									const r =
-										(isActive ? 7.5 : 6) * markerScale;
-									return (
-										<circle
-											key={e.country.iso}
-											ref={(el) => {
-												markerRefs.current[i] = el;
-											}}
-											cx={e.x}
-											cy={e.y}
-											r={r}
-											className={[
-												'cui-map-chart__marker',
-												isActive && 'is-active',
-											]
-												.filter(Boolean)
-												.join(' ')}
-											style={
-												{
-													'--cui-marker-fill': color,
-													'--cui-marker-delay': `${i * 25}ms`,
-												} as React.CSSProperties
-											}
-											tabIndex={0}
-											role="img"
-											aria-label={
-												e.datum.description ??
-												`${e.country.name}: ${e.datum.value}`
-											}
-											onFocus={() => setFocusIndex(i)}
-											onBlur={() =>
-												setFocusIndex((cur) =>
-													cur === i ? null : cur
-												)
-											}
-											onMouseEnter={() =>
-												setHoverIndex(i)
-											}
-											onMouseLeave={() =>
-												setHoverIndex((cur) =>
-													cur === i ? null : cur
-												)
-											}
-											onKeyDown={(ev) =>
-												onMarkerKeyDown(ev, i)
-											}
-										/>
-									);
-								})
-						}
+						{enriched.map((e, i) => {
+							const b = bucket(e.datum.value);
+							const color = palette[b];
+							const isActive = activeIndex === i;
+							const r = 6 * markerScale;
+							return (
+								<circle
+									key={e.country.iso}
+									ref={(el) => {
+										markerRefs.current[i] = el;
+									}}
+									cx={e.x}
+									cy={e.y}
+									r={r}
+									className={[
+										'cui-map-chart__marker',
+										isActive && 'is-active',
+									]
+										.filter(Boolean)
+										.join(' ')}
+									style={
+										{
+											'--cui-marker-fill': color,
+											'--cui-marker-delay': `${i * 25}ms`,
+										} as React.CSSProperties
+									}
+									tabIndex={0}
+									role="img"
+									aria-label={
+										e.datum.description ??
+										`${e.country.name}: ${e.datum.value}`
+									}
+									onFocus={() => setFocusIndex(i)}
+									onBlur={() =>
+										setFocusIndex((cur) =>
+											cur === i ? null : cur
+										)
+									}
+									onMouseEnter={() => setHoverIndex(i)}
+									onMouseLeave={() =>
+										setHoverIndex((cur) =>
+											cur === i ? null : cur
+										)
+									}
+									onKeyDown={(ev) => onMarkerKeyDown(ev, i)}
+								/>
+							);
+						})}
 					</g>
+					{/*
+						Active-marker overlay. The DOM order of the main
+						markers stays stable (so React + the browser don't
+						restart their reveal animation when the active
+						index changes); we just paint a non-interactive
+						copy of the active marker on top, larger and with
+						a stronger stroke if the original was focused.
+					*/}
+					{active && (
+						<g
+							className="cui-map-chart__active-overlay"
+							pointerEvents="none"
+							aria-hidden="true"
+						>
+							<circle
+								cx={active.x}
+								cy={active.y}
+								r={7.5 * markerScale}
+								className={[
+									'cui-map-chart__marker',
+									'cui-map-chart__marker--overlay',
+									focusIndex === activeIndex &&
+										'is-focused',
+								]
+									.filter(Boolean)
+									.join(' ')}
+								style={
+									{
+										'--cui-marker-fill':
+											palette[bucket(active.datum.value)],
+									} as React.CSSProperties
+								}
+							/>
+						</g>
+					)}
 				</svg>
 				{active && (
 					<div
@@ -374,37 +417,82 @@ export function MapChart({
 					</div>
 				)}
 			</div>
-			<div
-				className="cui-map-chart__legend"
-				role="img"
-				aria-label={`Color scale: ${clampedSteps} buckets, lighter is less, darker is more`}
-			>
-				<span className="cui-map-chart__legend-label">Less</span>
-				<ul className="cui-map-chart__legend-scale">
-					{palette.map((color, i) => {
-						const upper = boundaries[i];
-						const upperText =
-							i < palette.length - 1 && upper != null
-								? `≤ ${upper}`
-								: i === palette.length - 1
-									? `> ${boundaries[boundaries.length - 1] ?? ''}`
-									: '';
+			{legend === 'list' && (
+				<ul
+					className="cui-map-chart__legend-list"
+					aria-hidden="true"
+				>
+					{legendItems.map((item) => {
+						const isActive = activeIndex === item.dataIndex;
+						const color = palette[bucket(item.datum.value)];
 						return (
 							<li
-								key={i}
-								className="cui-map-chart__legend-step"
-								style={
-									{
-										'--cui-marker-fill': color,
-									} as React.CSSProperties
+								key={item.country.iso}
+								className={[
+									'cui-map-chart__legend-item',
+									isActive && 'is-active',
+								]
+									.filter(Boolean)
+									.join(' ')}
+								onMouseEnter={() =>
+									setHoverIndex(item.dataIndex)
 								}
-								title={upperText}
-							/>
+								onMouseLeave={() =>
+									setHoverIndex((cur) =>
+										cur === item.dataIndex ? null : cur
+									)
+								}
+								onClick={() => focusMarker(item.dataIndex)}
+							>
+								<span
+									className="cui-map-chart__legend-swatch"
+									style={{background: color}}
+								/>
+								<span className="cui-map-chart__legend-label">
+									{item.country.name}
+								</span>
+								<span className="cui-map-chart__legend-value">
+									{item.datum.value}
+								</span>
+							</li>
 						);
 					})}
 				</ul>
-				<span className="cui-map-chart__legend-label">More</span>
+			)}
 			</div>
+			{legend === 'scale' && (
+				<div
+					className="cui-map-chart__legend-scale-wrap"
+					role="img"
+					aria-label={`Color scale: ${clampedSteps} buckets, lighter is less, darker is more`}
+				>
+					<span className="cui-map-chart__legend-label">Less</span>
+					<ul className="cui-map-chart__legend-scale">
+						{palette.map((color, i) => {
+							const upper = boundaries[i];
+							const upperText =
+								i < palette.length - 1 && upper != null
+									? `≤ ${upper}`
+									: i === palette.length - 1
+										? `> ${boundaries[boundaries.length - 1] ?? ''}`
+										: '';
+							return (
+								<li
+									key={i}
+									className="cui-map-chart__legend-step"
+									style={
+										{
+											'--cui-marker-fill': color,
+										} as React.CSSProperties
+									}
+									title={upperText}
+								/>
+							);
+						})}
+						</ul>
+					<span className="cui-map-chart__legend-label">More</span>
+				</div>
+			)}
 		</figure>
 	);
 }

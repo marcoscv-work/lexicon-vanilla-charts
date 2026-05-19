@@ -87,6 +87,7 @@ Behaviour highlights:
 | `scheme` | `'blue' \| 'categorical'` | `'blue'` | Colour scale. Blue = monochrome density. Categorical = cyan→red. |
 | `steps` | `number` | `5` | Number of quantile buckets (2–5). |
 | `fit` | `'world' \| 'data'` | `'world'` | `'data'` zooms the viewBox to the marker bounding box (with padding) so regional datasets fill the canvas. |
+| `legend` | `'scale' \| 'list' \| 'none'` | `'scale'` | `'scale'` is the colour ramp under the canvas. `'list'` is a per-country list to the right (same layout as the PieChart legend). |
 | `title` | `string` | – | Accessible name. |
 | `description` | `string` | (auto) | Long description for AT. |
 | `animated` | `boolean` | `true` | Reveal stagger. Respects reduced-motion. |
@@ -238,7 +239,8 @@ Run `npm run storybook`. Stories are grouped under **Charts/**:
   `Sizes`, `Thickness`, `Responsive`, `ReducedMotion`,
   `KeyboardNavigation`.
 - `MapChart` — `BlueDensity`, `Categorical`, `ThreeBuckets`, `Sparse`,
-  `FitToDataEurope`, `FitToDataAsia`, `Responsive`, `ReducedMotion`.
+  `LegendList`, `LegendListCategorical`, `FitToDataEurope`,
+  `FitToDataAsia`, `Responsive`, `ReducedMotion`.
 
 The preview toolbar has a **Reduced motion** toggle that flips
 `c-prefers-reduced-motion` on `<body>`. Each story is wrapped in

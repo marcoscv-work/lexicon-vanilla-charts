@@ -13,6 +13,7 @@ export type {
 	MapDatum,
 	MapColorScheme,
 	MapChartFit,
+	MapChartLegend,
 } from './MapChart/MapChart';
 export {COUNTRY_COORDS} from './MapChart/countries';
 export type {CountryCoord} from './MapChart/countries';

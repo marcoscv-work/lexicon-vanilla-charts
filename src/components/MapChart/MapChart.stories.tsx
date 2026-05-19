@@ -14,6 +14,10 @@ const meta: Meta<typeof MapChart> = {
 			control: {type: 'inline-radio'},
 			options: ['world', 'data'],
 		},
+		legend: {
+			control: {type: 'inline-radio'},
+			options: ['scale', 'list', 'none'],
+		},
 		steps: {control: {type: 'range', min: 2, max: 5, step: 1}},
 	},
 	args: {
@@ -22,6 +26,7 @@ const meta: Meta<typeof MapChart> = {
 		scheme: 'blue',
 		steps: 5,
 		fit: 'world',
+		legend: 'scale',
 	},
 };
 
@@ -109,6 +114,30 @@ export const Sparse: Story = {
 			description: {
 				story:
 					'A handful of countries still produces a legible chart — the legend reflects whatever buckets the data falls into.',
+			},
+		},
+	},
+};
+
+export const LegendList: Story = {
+	args: {data: sample, legend: 'list', scheme: 'blue'},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'`legend="list"` puts a per-country list on the right of the canvas (sorted by value, highest first), matching the PieChart legend layout. Each row is clickable: clicking focuses the matching map marker. On narrow widths the list wraps under the canvas.',
+			},
+		},
+	},
+};
+
+export const LegendListCategorical: Story = {
+	args: {data: sample, legend: 'list', scheme: 'categorical'},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'`legend="list"` combined with the categorical scheme. The swatch in each row uses the same colour as the map marker.',
 			},
 		},
 	},
