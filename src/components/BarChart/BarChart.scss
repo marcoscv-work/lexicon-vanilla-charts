@@ -1,0 +1,120 @@
+.cui-bar-chart {
+	margin: 0;
+	display: inline-block;
+	color: var(--dark);
+
+	&__title {
+		font-weight: 600;
+		font-size: 0.9375rem;
+		margin-bottom: 0.5rem;
+	}
+
+	&__axis {
+		stroke: var(--light-d2);
+		stroke-width: 1;
+	}
+
+	&__bar {
+		fill: var(--primary-l0);
+		cursor: pointer;
+		transition:
+			fill 160ms ease,
+			transform 160ms ease;
+		transform-box: fill-box;
+		transform-origin: center bottom;
+		outline: none;
+	}
+
+	&__bar-group {
+		&.is-active .cui-bar-chart__bar {
+			fill: var(--primary);
+		}
+	}
+
+	&__bar:focus-visible {
+		fill: var(--primary-d2);
+		outline: 2px solid var(--primary-d2);
+		outline-offset: 2px;
+	}
+
+	&__label {
+		font-size: 0.75rem;
+		fill: var(--dark);
+	}
+
+	&__value-group {
+		pointer-events: none;
+
+		.cui-bar-chart__value {
+			font-size: 0.75rem;
+			font-weight: 700;
+			font-variant-numeric: tabular-nums;
+			fill: var(--dark);
+			transition: fill 160ms ease;
+		}
+
+		// Chip background ≥ 3:1 vs the white surface (primary lum ≈ 0.155
+		// → ratio ≈ 5.12:1) and white text on it stays at the same ratio,
+		// matching the legend chip in PieChart.
+		.cui-bar-chart__value-bg {
+			fill: var(--primary);
+		}
+
+		&.is-active .cui-bar-chart__value {
+			fill: var(--white);
+		}
+	}
+
+	// --- Motion: only when explicitly enabled by the component ---------------
+	&--motion {
+		.cui-bar-chart__bar {
+			transform-origin: center bottom;
+			animation: cui-bar-rise 480ms ease-out backwards;
+			animation-delay: var(--cui-bar-delay, 0ms);
+		}
+		&.cui-bar-chart--horizontal .cui-bar-chart__bar {
+			transform-origin: left center;
+			animation-name: cui-bar-grow-x;
+		}
+	}
+}
+
+@keyframes cui-bar-rise {
+	from {
+		transform: scaleY(0);
+		opacity: 0;
+	}
+	to {
+		transform: scaleY(1);
+		opacity: 1;
+	}
+}
+
+@keyframes cui-bar-grow-x {
+	from {
+		transform: scaleX(0);
+		opacity: 0;
+	}
+	to {
+		transform: scaleX(1);
+		opacity: 1;
+	}
+}
+
+// Belt-and-suspenders: both the OS-level media query and the Clay
+// `c-prefers-reduced-motion` body class strip animations directly, so the
+// reveal can't play even if a component mounted before the React hook
+// noticed the flag was on.
+@media (prefers-reduced-motion: reduce) {
+	.cui-bar-chart__bar,
+	.cui-bar-chart__value-group {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
+body.c-prefers-reduced-motion .cui-bar-chart__bar,
+body.c-prefers-reduced-motion .cui-bar-chart__value-group {
+	animation: none !important;
+	transition: none !important;
+}

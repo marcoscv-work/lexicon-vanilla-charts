@@ -1,0 +1,40 @@
+// Mirrors the slice of Clay's CSS API the charts depend on, using the same
+// custom property names so the package consumes the same variables once
+// integrated. The hexes are taken verbatim from Light.tokens.json.
+//
+// When you drop the charts into Clay these declarations become redundant —
+// Clay's global stylesheet already exposes the same names — but redeclaring
+// here keeps the package usable standalone.
+
+:root {
+	// --- Brand --------------------------------------------------------------
+	--primary: #0b5fff;
+	--primary-d1: #0053f0;
+	--primary-d2: #004ad7;
+	--primary-l0: #5791ff;
+	--primary-l1: #80acff;
+	--primary-l2: #b3cdff;
+	--primary-l3: #f0f5ff;
+
+	// --- Neutrals -----------------------------------------------------------
+	--white: #fff;
+	--light-l1: #f7f8f9;
+	--light: #f1f2f5;
+	--light-d1: #e2e4ea;
+	--light-d2: #d3d6e0;
+	--dark: #272833;
+	--dark-d1: #1c1c24;
+
+	// --- Chart family shades used by getAccessibleSeries() ------------------
+	// Hue + shade chosen to match references.png. Names match Clay's
+	// existing palette tokens (see the user-supplied dump).
+	--yellow-l2: #ffd666;
+	--red-l2: #f66;
+	--green-l4: #9de963;
+	--purple-l1: #bf66ff;
+	--teal-l2: #42d7be;
+	--pink-l2: #ff80c8;
+	--orange-l3: #ffa166;
+	--cyan-l3: #6cf;
+	--indigo-l3: #b2baff;
+}

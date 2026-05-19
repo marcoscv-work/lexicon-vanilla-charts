@@ -1,0 +1,21 @@
+node_modules/
+dist/
+storybook-static/
+
+# Editor / OS noise
+.DS_Store
+*.log
+
+# Optional caches written by tooling
+.cache/
+.vite/
+.parcel-cache/
+.storybook/cache/
+
+# Local env overrides
+.env
+.env.*.local
+
+# Puppeteer cache (the a11y scan uses puppeteer; cache is huge)
+.cache/puppeteer/
+~/.cache/puppeteer/

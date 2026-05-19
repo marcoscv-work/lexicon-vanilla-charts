@@ -1,0 +1,234 @@
+.cui-pie-chart {
+	margin: 0;
+	display: inline-block;
+	vertical-align: top;
+	max-width: 100%;
+	color: var(--dark);
+
+	&__title {
+		font-weight: 600;
+		font-size: 0.9375rem;
+		margin-bottom: 0.5rem;
+	}
+
+	&__body {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		flex-wrap: wrap;
+	}
+
+	&__canvas {
+		position: relative;
+		flex: 0 0 auto;
+		max-width: 100%;
+	}
+
+	&__center {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		pointer-events: none;
+		padding: 0 12%;
+	}
+
+	&__center-label {
+		font-size: 0.75rem;
+		color: var(--dark);
+		opacity: 0.8;
+		line-height: 1.1;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	&__center-value {
+		font-size: 1.5rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		line-height: 1.1;
+		color: var(--dark-d1);
+	}
+
+	&__center-sub {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--dark);
+		opacity: 0.7;
+		font-variant-numeric: tabular-nums;
+	}
+
+	// Size-aware tweaks to the center label stack.
+	&--size-xs {
+		.cui-pie-chart__center {
+			padding: 0 18%;
+		}
+		.cui-pie-chart__center-label {
+			font-size: 0.625rem;
+		}
+		.cui-pie-chart__center-value {
+			font-size: 0.9375rem;
+		}
+		.cui-pie-chart__center-sub {
+			font-size: 0.625rem;
+		}
+	}
+
+	&--size-sm {
+		.cui-pie-chart__center-value {
+			font-size: 1.25rem;
+		}
+	}
+
+	&--size-lg {
+		.cui-pie-chart__center-value {
+			font-size: 1.875rem;
+		}
+	}
+
+	// --- Slice --------------------------------------------------------------
+	// Hover keeps the slice geometry static (only fill/brightness changes) so
+	// the mouse can't trip the enter/leave loop at slice edges.
+	&__slice {
+		fill: var(--cui-slice-fill);
+		stroke: var(--white);
+		stroke-width: 2;
+		cursor: pointer;
+		transition: filter 160ms ease;
+		outline: none;
+
+		&.is-hover {
+			filter: brightness(1.07) saturate(1.05);
+		}
+
+		&.is-focus {
+			filter: brightness(1.05);
+		}
+	}
+
+	// --- Focus inset border -------------------------------------------------
+	// Two overlay paths clipped to the slice shape draw a 4px ring inside
+	// the slice edge: 2px primary-l0 followed by 2px white. The blue layer
+	// pops ≥ 3:1 against the surrounding white so the focus state is
+	// unmistakable.
+	&__focus-overlay {
+		fill: none;
+	}
+
+	&__focus-inset-halo {
+		stroke: var(--white);
+		stroke-width: 8;
+		fill: none;
+	}
+
+	&__focus-inset-ring {
+		stroke: var(--primary-l0);
+		stroke-width: 4;
+		fill: none;
+	}
+
+	// --- Legend -------------------------------------------------------------
+	&__legend {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+		gap: 0.25rem 1rem;
+		font-size: 0.8125rem;
+	}
+
+	&__legend-item {
+		display: grid;
+		grid-template-columns: 12px 1fr auto;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.125rem 0.375rem;
+		border-radius: 4px;
+		cursor: pointer;
+		color: var(--dark);
+		transition:
+			background 140ms ease,
+			color 140ms ease;
+
+		// State change vs the white surface: primary lum ≈ 0.155 → ratio
+		// ≈ 5.12:1 (well past WCAG 1.4.11). White text on primary gives
+		// the same 5.12:1, comfortably past AA for normal text.
+		&.is-active {
+			background: var(--primary);
+			color: var(--white);
+
+			.cui-pie-chart__legend-value {
+				color: var(--white);
+			}
+
+			.cui-pie-chart__legend-swatch {
+				border-color: var(--white);
+			}
+		}
+	}
+
+	&__legend-swatch {
+		width: 12px;
+		height: 12px;
+		border-radius: 2px;
+		border: 1px solid var(--dark-d1);
+	}
+
+	&__legend-label {
+		font-weight: 400;
+	}
+
+	&__legend-value {
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		color: var(--dark);
+	}
+
+	// --- Motion -------------------------------------------------------------
+	&--motion {
+		.cui-pie-chart__slice {
+			animation: cui-slice-in 520ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+			animation-delay: var(--cui-slice-delay, 0ms);
+			transform-box: fill-box;
+			transform-origin: center;
+		}
+	}
+
+	// The body is a flex row with `flex-wrap`, so the legend naturally
+	// falls below the canvas whenever the available width can't host
+	// both side by side.
+}
+
+@keyframes cui-slice-in {
+	from {
+		transform: scale(0.4);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+// Two safety nets in addition to the React hook. They fire regardless of
+// mount timing — if either condition is true when the slice appears in the
+// DOM, the animation property is dropped before the browser can play it.
+@media (prefers-reduced-motion: reduce) {
+	.cui-pie-chart__slice,
+	.cui-pie-chart__legend-item {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
+body.c-prefers-reduced-motion .cui-pie-chart__slice,
+body.c-prefers-reduced-motion .cui-pie-chart__legend-item {
+	animation: none !important;
+	transition: none !important;
+}
