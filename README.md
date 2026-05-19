@@ -4,13 +4,16 @@
 > Proof of concept — meant to be promoted into the main Clay repo without
 > redesign once the API is validated.
 
-Two components ship today:
+Three components ship today:
 
 - **`<BarChart>`** — single-series vertical or horizontal bars, primary
   blue fill, hover/focus chip showing the value.
 - **`<PieChart>`** — accessible donut/pie with per-slice keyboard focus,
   screen-reader announcements, sized via presets, ring thickness control
   and an animated reveal that respects `prefers-reduced-motion`.
+- **`<MapChart>`** — country-level heatmap (proportional symbol). Two
+  built-in colour schemes: a monochrome blue scale and a five-hue
+  cold-to-warm categorical scale. Markers are keyboard-focusable.
 
 The whole package weighs just two React components, a token mirror, three
 small a11y helpers and ~250 lines of SCSS. There are no chart libraries
@@ -75,6 +78,47 @@ Behaviour highlights:
   white surface — WCAG 1.4.11 ✓).
 - Reveal animation respects the OS media query *and* the
   `c-prefers-reduced-motion` body class (Clay's convention).
+
+### `<MapChart>`
+
+| Prop | Type | Default | Notes |
+|---|---|---|---|
+| `data` | `Array<{country, value, description?}>` | – | `country` is ISO 3166-1 alpha-2 (e.g. `'ES'`). |
+| `scheme` | `'blue' \| 'categorical'` | `'blue'` | Colour scale. Blue = monochrome density. Categorical = cyan→red. |
+| `steps` | `number` | `5` | Number of quantile buckets (2–5). |
+| `title` | `string` | – | Accessible name. |
+| `description` | `string` | (auto) | Long description for AT. |
+| `animated` | `boolean` | `true` | Reveal stagger. Respects reduced-motion. |
+| `className` | `string` | – | |
+
+```tsx
+<MapChart
+  title="Active users by country"
+  scheme="blue"   // or "categorical"
+  data={[
+    {country: 'US', value: 12450},
+    {country: 'DE', value: 5210},
+    {country: 'ES', value: 3640},
+    {country: 'CN', value: 14210},
+    // ~50 countries supported out of the box — see COUNTRY_COORDS.
+  ]}
+/>
+```
+
+Behaviour highlights:
+
+- Renders the stylised world map from `world-map.svg` as the geographic
+  base (themed via `--light` / `--light-d1`).
+- Each datum becomes a `<circle>` marker placed via a piecewise-linear
+  lat/lon projection tuned to that base art. Approximate but readable
+  per-region — see `CLAUDE.md` if you swap the SVG.
+- Markers carry `tabIndex=0`, `role="img"` and an `aria-label` with the
+  country name and value. `←/→/↑/↓/Home/End` cycle between countries
+  in the order they appear in `data`.
+- Hover/focus surfaces a `--primary` tooltip on the canvas with the
+  active country's value.
+- Legend strip below the canvas shows the colour ramp from less to
+  more. Bucket boundaries are exposed as `title` tooltips per swatch.
 
 ### `<PieChart>`
 
@@ -192,6 +236,8 @@ Run `npm run storybook`. Stories are grouped under **Charts/**:
 - `PieChart` — `Default`, `TwoSlices`, `OddSliceCount`, `ManySlices`,
   `Sizes`, `Thickness`, `Responsive`, `ReducedMotion`,
   `KeyboardNavigation`.
+- `MapChart` — `BlueDensity`, `Categorical`, `ThreeBuckets`, `Sparse`,
+  `Responsive`, `ReducedMotion`.
 
 The preview toolbar has a **Reduced motion** toggle that flips
 `c-prefers-reduced-motion` on `<body>`. Each story is wrapped in

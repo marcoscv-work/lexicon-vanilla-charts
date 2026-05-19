@@ -33,11 +33,18 @@ new-charts/
         │   ├── BarChart.tsx
         │   ├── BarChart.scss
         │   └── BarChart.stories.tsx
-        └── PieChart/
-            ├── PieChart.tsx
-            ├── PieChart.scss
-            ├── PieChart.stories.tsx
-            └── geometry.ts    # buildSlices(values, cx, cy, rOuter, rInner)
+        ├── PieChart/
+        │   ├── PieChart.tsx
+        │   ├── PieChart.scss
+        │   ├── PieChart.stories.tsx
+        │   └── geometry.ts    # buildSlices(values, cx, cy, rOuter, rInner)
+        └── MapChart/
+            ├── MapChart.tsx
+            ├── MapChart.scss
+            ├── MapChart.stories.tsx
+            ├── world-map.svg  # base art (imported via Vite ?raw)
+            ├── countries.ts   # ISO + lat/lon for ~55 countries
+            └── projection.ts  # piecewise-linear lat/lon → SVG mapping
 ```
 
 ## Naming conventions
@@ -141,7 +148,30 @@ description (`aria-describedby` + an sr-only `<p>` summarising every
 datum). Individual bars/slices keep their own `role="img"` +
 `aria-label`.
 
-### 7. Storybook a11y warnings include the iframe shell
+### 7. The map projection is hand-tuned, not Mercator
+
+`world-map.svg` is a stylised artwork, not a mathematical projection.
+The Americas are visually compressed inward and the southern hemisphere
+is stretched — a single linear or Mercator fit puts markers in the
+wrong continent.
+
+**Therefore**: `src/components/MapChart/projection.ts` uses a piecewise
+linear fit calibrated against five visual anchors (London, mid-USA,
+Tokyo, São Paulo, Sydney). Different `LON_SCALE` and `LAT_SCALE`
+constants per hemisphere. Sub-degree accuracy was not the goal — the
+markers land in the right region and the legend conveys density.
+
+**If you swap the base SVG, re-calibrate the constants.** Don't try to
+use a real projection library — that's a much bigger dependency than
+this POC needs, and the artwork is hand-drawn anyway so any "correct"
+projection will still be off.
+
+The base SVG is imported via Vite's `?raw` query and injected via
+`dangerouslySetInnerHTML` so its paths can be themed through a single
+`.cui-map-chart__land` selector (the original `fill="#F1F2F5"` is
+stripped during import).
+
+### 8. Storybook a11y warnings include the iframe shell
 
 When the user complains about a11y warnings, separate component
 violations from iframe-shell violations (`landmark-one-main`,

@@ -21,6 +21,12 @@ const STORIES = [
 	'charts-piechart--responsive',
 	'charts-piechart--reduced-motion',
 	'charts-piechart--keyboard-navigation',
+	'charts-mapchart--blue-density',
+	'charts-mapchart--categorical',
+	'charts-mapchart--three-buckets',
+	'charts-mapchart--sparse',
+	'charts-mapchart--responsive',
+	'charts-mapchart--reduced-motion',
 ];
 
 const browser = await puppeteer.launch({headless: 'new'});

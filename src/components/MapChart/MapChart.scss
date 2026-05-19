@@ -1,0 +1,145 @@
+.cui-map-chart {
+	margin: 0;
+	display: block;
+	color: var(--dark);
+	max-width: 100%;
+
+	&__title {
+		font-weight: 600;
+		font-size: 0.9375rem;
+		margin-bottom: 0.5rem;
+	}
+
+	// --- Canvas + base map --------------------------------------------------
+	&__canvas {
+		position: relative;
+		width: 100%;
+		max-width: 720px;
+	}
+
+	&__land {
+		fill: var(--light);
+		stroke: var(--light-d1);
+		stroke-width: 0.25;
+
+		// The inner SVG is injected via dangerouslySetInnerHTML so we can't
+		// add per-path classes. The descendant selector below keeps the
+		// land paths themable through this single rule.
+		path {
+			fill: inherit;
+		}
+	}
+
+	// --- Markers ------------------------------------------------------------
+	&__marker {
+		fill: var(--cui-marker-fill);
+		stroke: var(--white);
+		stroke-width: 1.5;
+		cursor: pointer;
+		transition:
+			r 160ms ease,
+			filter 160ms ease,
+			stroke-width 160ms ease;
+		outline: none;
+
+		&.is-active {
+			filter: brightness(1.05);
+			stroke-width: 2.5;
+		}
+
+		&:focus-visible {
+			stroke: var(--primary);
+			stroke-width: 3;
+		}
+	}
+
+	// --- Tooltip ------------------------------------------------------------
+	&__tooltip {
+		position: absolute;
+		top: 0;
+		left: 0;
+		background: var(--primary);
+		color: var(--white);
+		padding: 0.25rem 0.625rem;
+		border-radius: 4px;
+		font-size: 0.8125rem;
+		font-variant-numeric: tabular-nums;
+		display: flex;
+		gap: 0.5rem;
+		align-items: baseline;
+		pointer-events: none;
+		max-width: 100%;
+	}
+
+	&__tooltip-label {
+		font-weight: 400;
+	}
+
+	&__tooltip-value {
+		font-weight: 700;
+	}
+
+	// --- Legend -------------------------------------------------------------
+	&__legend {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-top: 0.75rem;
+		font-size: 0.75rem;
+		color: var(--dark);
+	}
+
+	&__legend-label {
+		opacity: 0.7;
+	}
+
+	&__legend-scale {
+		display: flex;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		gap: 0;
+		border-radius: 4px;
+		overflow: hidden;
+	}
+
+	&__legend-step {
+		width: 32px;
+		height: 12px;
+		background: var(--cui-marker-fill);
+	}
+
+	// --- Motion -------------------------------------------------------------
+	&--motion {
+		.cui-map-chart__marker {
+			animation: cui-marker-in 520ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+			animation-delay: var(--cui-marker-delay, 0ms);
+			transform-box: fill-box;
+			transform-origin: center;
+		}
+	}
+}
+
+@keyframes cui-marker-in {
+	from {
+		transform: scale(0);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+// Same dual safety net the other charts use.
+@media (prefers-reduced-motion: reduce) {
+	.cui-map-chart__marker {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
+body.c-prefers-reduced-motion .cui-map-chart__marker {
+	animation: none !important;
+	transition: none !important;
+}
