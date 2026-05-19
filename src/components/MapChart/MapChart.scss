@@ -46,15 +46,14 @@
 		stroke-width: 1.5;
 		cursor: pointer;
 		transition: filter 160ms ease;
+		// Focus indicator is drawn by the overlay layer below (white halo +
+		// primary ring around the marker), matching the Lexicon focus
+		// pattern used by PieChart slices. The native outline would clash
+		// with the rings, so suppress it.
 		outline: none;
 
 		&.is-active {
 			filter: brightness(1.05);
-		}
-
-		&:focus-visible {
-			stroke: var(--primary);
-			stroke-width: 3;
 		}
 	}
 
@@ -66,10 +65,28 @@
 		transition: none !important;
 		stroke-width: 2.5;
 
+		// When focus drew the white+primary rings outside the marker, drop
+		// the marker's own stroke so it doesn't blend into the white halo.
 		&.is-focused {
-			stroke: var(--primary);
-			stroke-width: 3;
+			stroke: none;
+			stroke-width: 0;
 		}
+	}
+
+	// --- Focus rings (Lexicon-style 2px primary + 2px white) ----------------
+	// Outer ring sits at the outermost edge; inner halo sits between the
+	// marker fill and the outer ring. Order in the DOM (outer drawn first,
+	// halo second, marker third) keeps both rings fully visible.
+	&__focus-ring-outer {
+		fill: none;
+		stroke: var(--primary);
+		stroke-width: 2;
+	}
+
+	&__focus-ring-inner {
+		fill: none;
+		stroke: var(--white);
+		stroke-width: 2;
 	}
 
 	// --- Tooltip ------------------------------------------------------------

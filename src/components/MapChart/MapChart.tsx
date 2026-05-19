@@ -372,8 +372,11 @@ export function MapChart({
 						markers stays stable (so React + the browser don't
 						restart their reveal animation when the active
 						index changes); we just paint a non-interactive
-						copy of the active marker on top, larger and with
-						a stronger stroke if the original was focused.
+						copy of the active marker on top, plus — when the
+						active state came from keyboard focus — two
+						concentric rings (white halo + primary outer)
+						matching the Lexicon focus pattern that PieChart
+						uses on its slices.
 					*/}
 					{active && (
 						<g
@@ -381,6 +384,22 @@ export function MapChart({
 							pointerEvents="none"
 							aria-hidden="true"
 						>
+							{focusIndex === activeIndex && (
+								<>
+									<circle
+										cx={active.x}
+										cy={active.y}
+										r={10.5 * markerScale}
+										className="cui-map-chart__focus-ring-outer"
+									/>
+									<circle
+										cx={active.x}
+										cy={active.y}
+										r={8.5 * markerScale}
+										className="cui-map-chart__focus-ring-inner"
+									/>
+								</>
+							)}
 							<circle
 								cx={active.x}
 								cy={active.y}
@@ -388,8 +407,7 @@ export function MapChart({
 								className={[
 									'cui-map-chart__marker',
 									'cui-map-chart__marker--overlay',
-									focusIndex === activeIndex &&
-										'is-focused',
+									focusIndex === activeIndex && 'is-focused',
 								]
 									.filter(Boolean)
 									.join(' ')}
