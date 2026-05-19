@@ -4,6 +4,14 @@ import '../src/styles/global.scss';
 
 const preview: Preview = {
 	parameters: {
+		// Sidebar order overrides the default alphabetical sort. BarChart
+		// is the least feature-rich component so it sits last; MapChart
+		// (the latest, most prominent) leads.
+		options: {
+			storySort: {
+				order: ['Charts', ['MapChart', 'PieChart', 'BarChart']],
+			},
+		},
 		controls: {
 			matchers: {color: /(background|color)$/i, date: /Date$/i},
 		},
