@@ -35,6 +35,8 @@ export interface MapDatum {
 
 export type MapColorScheme = 'blue' | 'categorical';
 
+export type MapChartFit = 'world' | 'data';
+
 export interface MapChartProps {
 	data: MapDatum[];
 	/**
@@ -48,6 +50,17 @@ export interface MapChartProps {
 	scheme?: MapColorScheme;
 	/** Number of buckets the values are binned into (2–6). Default `5`. */
 	steps?: number;
+	/**
+	 * Viewport mode.
+	 *
+	 * - `world` (default): always shows the full world map.
+	 * - `data`: zooms to the bounding box of the rendered markers. Useful
+	 *   when the data is concentrated in one region (e.g. only European
+	 *   countries) — the rest of the map gets cropped out so the markers
+	 *   read at full size. Land paths around the data still draw, so the
+	 *   surrounding geographic context isn't lost.
+	 */
+	fit?: MapChartFit;
 	/** Accessible name for the chart as a whole. */
 	title: string;
 	/** Optional accessible long description. */
@@ -104,6 +117,7 @@ export function MapChart({
 	data,
 	scheme = 'blue',
 	steps = 5,
+	fit = 'world',
 	title,
 	description,
 	animated = true,
@@ -151,6 +165,47 @@ export function MapChart({
 		() => buildBuckets(enriched.map((e) => e.datum.value), clampedSteps),
 		[enriched, clampedSteps]
 	);
+
+	// When `fit === 'data'`, crop the viewBox to the marker bounding box
+	// (with padding) so the visible region matches where the data is.
+	// Land paths outside still draw — they're just clipped by the SVG
+	// viewport, which keeps the surrounding geographic context.
+	const viewBox = useMemo(() => {
+		if (fit !== 'data' || enriched.length === 0) {
+			return `0 0 ${MAP_VIEWBOX.width} ${MAP_VIEWBOX.height}`;
+		}
+		const xs = enriched.map((e) => e.x);
+		const ys = enriched.map((e) => e.y);
+		const PAD = 30;
+		let minX = Math.max(0, Math.min(...xs) - PAD);
+		let minY = Math.max(0, Math.min(...ys) - PAD);
+		const maxX = Math.min(MAP_VIEWBOX.width, Math.max(...xs) + PAD);
+		const maxY = Math.min(MAP_VIEWBOX.height, Math.max(...ys) + PAD);
+		let w = maxX - minX;
+		let h = maxY - minY;
+		// Avoid degenerate boxes (e.g. a single marker) by enforcing a
+		// minimum 200×100 viewport. Smaller boxes also blow up marker
+		// radius too much.
+		const MIN_W = 200;
+		const MIN_H = 100;
+		if (w < MIN_W) {
+			minX = Math.max(0, minX - (MIN_W - w) / 2);
+			w = MIN_W;
+		}
+		if (h < MIN_H) {
+			minY = Math.max(0, minY - (MIN_H - h) / 2);
+			h = MIN_H;
+		}
+		return `${minX} ${minY} ${w} ${h}`;
+	}, [fit, enriched]);
+
+	// Marker radius shrinks proportionally when zoomed so a tight cluster
+	// doesn't end up with comically large dots.
+	const markerScale = useMemo(() => {
+		const [, , w] = viewBox.split(' ').map(Number);
+		if (!w || !isFinite(w)) return 1;
+		return Math.max(0.45, Math.min(1, w / MAP_VIEWBOX.width));
+	}, [viewBox]);
 
 	const summary = useMemo(() => {
 		const parts = enriched
@@ -220,7 +275,7 @@ export function MapChart({
 			</p>
 			<div className="cui-map-chart__canvas">
 				<svg
-					viewBox={`0 0 ${MAP_VIEWBOX.width} ${MAP_VIEWBOX.height}`}
+					viewBox={viewBox}
 					preserveAspectRatio="xMidYMid meet"
 					focusable="false"
 					style={{
@@ -253,7 +308,8 @@ export function MapChart({
 									const b = bucket(e.datum.value);
 									const color = palette[b];
 									const isActive = activeIndex === i;
-									const r = isActive ? 7.5 : 6;
+									const r =
+										(isActive ? 7.5 : 6) * markerScale;
 									return (
 										<circle
 											key={e.country.iso}

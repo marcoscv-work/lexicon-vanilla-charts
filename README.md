@@ -86,6 +86,7 @@ Behaviour highlights:
 | `data` | `Array<{country, value, description?}>` | – | `country` is ISO 3166-1 alpha-2 (e.g. `'ES'`). |
 | `scheme` | `'blue' \| 'categorical'` | `'blue'` | Colour scale. Blue = monochrome density. Categorical = cyan→red. |
 | `steps` | `number` | `5` | Number of quantile buckets (2–5). |
+| `fit` | `'world' \| 'data'` | `'world'` | `'data'` zooms the viewBox to the marker bounding box (with padding) so regional datasets fill the canvas. |
 | `title` | `string` | – | Accessible name. |
 | `description` | `string` | (auto) | Long description for AT. |
 | `animated` | `boolean` | `true` | Reveal stagger. Respects reduced-motion. |
@@ -237,7 +238,7 @@ Run `npm run storybook`. Stories are grouped under **Charts/**:
   `Sizes`, `Thickness`, `Responsive`, `ReducedMotion`,
   `KeyboardNavigation`.
 - `MapChart` — `BlueDensity`, `Categorical`, `ThreeBuckets`, `Sparse`,
-  `Responsive`, `ReducedMotion`.
+  `FitToDataEurope`, `FitToDataAsia`, `Responsive`, `ReducedMotion`.
 
 The preview toolbar has a **Reduced motion** toggle that flips
 `c-prefers-reduced-motion` on `<body>`. Each story is wrapped in

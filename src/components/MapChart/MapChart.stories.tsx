@@ -10,6 +10,10 @@ const meta: Meta<typeof MapChart> = {
 			control: {type: 'inline-radio'},
 			options: ['blue', 'categorical'],
 		},
+		fit: {
+			control: {type: 'inline-radio'},
+			options: ['world', 'data'],
+		},
 		steps: {control: {type: 'range', min: 2, max: 5, step: 1}},
 	},
 	args: {
@@ -17,6 +21,7 @@ const meta: Meta<typeof MapChart> = {
 		animated: true,
 		scheme: 'blue',
 		steps: 5,
+		fit: 'world',
 	},
 };
 
@@ -104,6 +109,69 @@ export const Sparse: Story = {
 			description: {
 				story:
 					'A handful of countries still produces a legible chart — the legend reflects whatever buckets the data falls into.',
+			},
+		},
+	},
+};
+
+export const FitToDataEurope: Story = {
+	args: {
+		data: [
+			{country: 'ES', value: 3640},
+			{country: 'PT', value: 920},
+			{country: 'FR', value: 2510},
+			{country: 'GB', value: 4280},
+			{country: 'IE', value: 410},
+			{country: 'DE', value: 5210},
+			{country: 'NL', value: 820},
+			{country: 'BE', value: 610},
+			{country: 'IT', value: 1290},
+			{country: 'CH', value: 380},
+			{country: 'AT', value: 290},
+			{country: 'PL', value: 690},
+			{country: 'SE', value: 510},
+			{country: 'NO', value: 320},
+			{country: 'DK', value: 240},
+			{country: 'FI', value: 180},
+		],
+		fit: 'data',
+		title: 'Active users — Europe',
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'`fit="data"` crops the viewBox to the marker bounding box plus padding. When the data is concentrated in one region, the map zooms in so the dots read at full size — surrounding land paths still draw inside the cropped viewport, so the geographic context isn\'t lost.',
+			},
+		},
+	},
+};
+
+export const FitToDataAsia: Story = {
+	args: {
+		data: [
+			{country: 'IN', value: 8430},
+			{country: 'PK', value: 920},
+			{country: 'BD', value: 1180},
+			{country: 'CN', value: 14210},
+			{country: 'JP', value: 3210},
+			{country: 'KR', value: 1640},
+			{country: 'VN', value: 770},
+			{country: 'TH', value: 690},
+			{country: 'ID', value: 1120},
+			{country: 'MY', value: 410},
+			{country: 'PH', value: 880},
+			{country: 'SG', value: 230},
+		],
+		fit: 'data',
+		scheme: 'categorical',
+		title: 'Active users — Asia-Pacific',
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'Same `fit="data"` behaviour with the categorical scheme. Use this when your data is regional but you want to keep the world map as the underlying coordinate system.',
 			},
 		},
 	},

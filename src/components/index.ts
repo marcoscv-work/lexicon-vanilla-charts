@@ -12,6 +12,7 @@ export type {
 	MapChartProps,
 	MapDatum,
 	MapColorScheme,
+	MapChartFit,
 } from './MapChart/MapChart';
 export {COUNTRY_COORDS} from './MapChart/countries';
 export type {CountryCoord} from './MapChart/countries';

@@ -25,6 +25,8 @@ const STORIES = [
 	'charts-mapchart--categorical',
 	'charts-mapchart--three-buckets',
 	'charts-mapchart--sparse',
+	'charts-mapchart--fit-to-data-europe',
+	'charts-mapchart--fit-to-data-asia',
 	'charts-mapchart--responsive',
 	'charts-mapchart--reduced-motion',
 ];
