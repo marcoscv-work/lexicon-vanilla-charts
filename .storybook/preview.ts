@@ -9,7 +9,10 @@ const preview: Preview = {
 		// (the latest, most prominent) leads.
 		options: {
 			storySort: {
-				order: ['Charts', ['MapChart', 'PieChart', 'BarChart']],
+				order: [
+					'Charts',
+					['MapChart', 'LineChart', 'PieChart', 'BarChart'],
+				],
 			},
 		},
 		controls: {

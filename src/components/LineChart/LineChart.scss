@@ -1,0 +1,366 @@
+.cui-line-chart {
+	margin: 0;
+	// `inline-block` (the BarChart pattern) so the figure shrinks to the
+	// `width` / `height` props instead of stretching to its parent. The
+	// SVG below intentionally drops the `width: 100%` rule MapChart uses
+	// so the SVG's `width=` attribute is what actually drives the size.
+	display: inline-block;
+	color: var(--dark);
+	max-width: 100%;
+
+	// When the table legend is on, the table can be wider than the SVG
+	// (max-width 720). Let the figure flow as a block so the row stacks
+	// neatly below the canvas — matches how BarChart switches to block
+	// when `legend !== 'none'`.
+	&--legend-table {
+		display: block;
+	}
+
+	&__title {
+		font-weight: 600;
+		font-size: 0.9375rem;
+		margin-bottom: 0.5rem;
+	}
+
+	&__canvas {
+		position: relative;
+		display: inline-block;
+		max-width: 100%;
+	}
+
+	&__svg {
+		display: block;
+		max-width: 100%;
+		height: auto;
+	}
+
+	// --- Grid + axes --------------------------------------------------------
+	&__grid {
+		pointer-events: none;
+	}
+
+	&__grid-line {
+		stroke: var(--light-d1);
+		stroke-width: 1;
+
+		// Vertical grid lines (one per category) are kept slightly fainter
+		// than the horizontal ones so the eye reads tick rows first —
+		// matches the Lexicon reference SVG.
+		&--v {
+			stroke: var(--light);
+		}
+	}
+
+	&__axis-label {
+		font-size: 0.6875rem;
+		// 0.75 keeps the labels secondary while clearing AA contrast
+		// against the white surface (same threshold the legend `--rank`
+		// column uses elsewhere).
+		fill: var(--dark);
+		opacity: 0.75;
+
+		&--y {
+			font-variant-numeric: tabular-nums;
+		}
+	}
+
+	// --- Lines --------------------------------------------------------------
+	&__line {
+		stroke: var(--cui-line-stroke, var(--primary-l0));
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		stroke-dasharray: var(--cui-line-dash, none);
+		fill: none;
+	}
+
+	// --- Markers ------------------------------------------------------------
+	&__marker {
+		fill: var(--cui-marker-fill, var(--primary-l0));
+		stroke: var(--white);
+		stroke-width: 1;
+	}
+
+	&__point {
+		cursor: pointer;
+		outline: none;
+		transition: filter 160ms ease;
+
+		// Mouse / programmatic hover and focus share the brighten step
+		// — the focus halo (drawn below) is the keyboard-specific cue.
+		&.is-active .cui-line-chart__marker {
+			filter: brightness(1.05) saturate(1.05);
+		}
+	}
+
+	// Focus halo: 2 px primary on top of 2 px white, both centred on the
+	// data point. The MarkerShape component re-emits the marker at scales
+	// 2.0 (primary) and 1.5 (white), so for symmetric shapes the visible
+	// band ends up exactly 2 px on every side; asymmetric shapes
+	// (bar-h / bar-v) get a thinner band on the short axis but still
+	// read as a clear focus indicator.
+	&__halo-outer {
+		fill: var(--primary-l0);
+	}
+
+	&__halo-inner {
+		fill: var(--white);
+	}
+
+	// --- Tooltip ------------------------------------------------------------
+	// Mirrors MapChart's chip placement (absolute top-left of the canvas)
+	// so the tooltip never collides with the marker hit area — moving
+	// the chip with the cursor was tried for the other charts and the
+	// flicker at chart edges wasn't worth it.
+	&__tooltip {
+		position: absolute;
+		top: 0;
+		left: 0;
+		background: var(--primary);
+		color: var(--white);
+		padding: 0.25rem 0.625rem;
+		border-radius: 4px;
+		font-size: 0.8125rem;
+		font-variant-numeric: tabular-nums;
+		display: flex;
+		gap: 0.5rem;
+		align-items: baseline;
+		pointer-events: none;
+		max-width: 100%;
+	}
+
+	&__tooltip-label {
+		font-weight: 400;
+	}
+
+	&__tooltip-value {
+		font-weight: 700;
+	}
+
+	// --- Legend: compact list (legend="list") -------------------------------
+	&__legend {
+		list-style: none;
+		padding: 0;
+		margin: 0.75rem 0 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1rem;
+		font-size: 0.8125rem;
+	}
+
+	&__legend-item {
+		display: inline-grid;
+		grid-template-columns: 26px 1fr auto;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.125rem 0.375rem;
+		border-radius: 4px;
+		cursor: pointer;
+		color: var(--dark);
+		transition:
+			background 140ms ease,
+			color 140ms ease;
+
+		&.is-active {
+			background: var(--primary);
+			color: var(--white);
+
+			.cui-line-chart__legend-value {
+				color: var(--white);
+			}
+		}
+	}
+
+	&__legend-icon {
+		display: inline-block;
+		vertical-align: middle;
+		overflow: visible;
+	}
+
+	&__legend-line {
+		stroke: var(--cui-marker-fill, var(--primary-l0));
+		stroke-width: 2;
+		stroke-dasharray: var(--cui-line-dash, none);
+		stroke-linecap: round;
+	}
+
+	&__legend-marker {
+		fill: var(--cui-marker-fill, var(--primary-l0));
+		stroke: var(--white);
+		stroke-width: 1;
+	}
+
+	&__legend-label {
+		font-weight: 400;
+	}
+
+	&__legend-value {
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		color: var(--dark);
+	}
+
+	// --- Legend: GA-style detail table (legend="table") ---------------------
+	// Same shape as the table the other charts ship — the rank cell uses
+	// 0.75 opacity (4.04:1 with 0.6 was flagged by axe earlier, so 0.75
+	// is the safe floor on `--dark` against the white surface).
+	&__legend-table {
+		width: 100%;
+		max-width: 720px;
+		margin-top: 1rem;
+		border-collapse: collapse;
+		font-size: 0.8125rem;
+		color: var(--dark);
+		font-variant-numeric: tabular-nums;
+	}
+
+	&__legend-table-th {
+		text-align: left;
+		font-weight: 600;
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		color: var(--dark);
+		opacity: 0.7;
+		padding: 0.375rem 0.625rem;
+		border-bottom: 1px solid var(--light-d1);
+		white-space: nowrap;
+
+		&--rank {
+			width: 2.5rem;
+			text-align: right;
+		}
+
+		&--color {
+			width: 2.5rem;
+			padding-left: 0;
+			padding-right: 0;
+		}
+
+		&--value,
+		&--share {
+			text-align: right;
+		}
+
+		&--share {
+			width: 5rem;
+		}
+	}
+
+	&__legend-row {
+		cursor: pointer;
+		transition:
+			background 140ms ease,
+			color 140ms ease;
+
+		&:hover {
+			background: var(--light);
+		}
+
+		&.is-active {
+			background: var(--primary);
+			color: var(--white);
+
+			.cui-line-chart__legend-marker {
+				stroke: var(--white);
+			}
+
+			.cui-line-chart__legend-cell {
+				color: var(--white);
+			}
+		}
+	}
+
+	&__legend-cell {
+		padding: 0.375rem 0.625rem;
+		border-bottom: 1px solid var(--light-d1);
+		font-weight: 400;
+		color: var(--dark);
+
+		&--rank {
+			text-align: right;
+			opacity: 0.75;
+			width: 2.5rem;
+		}
+
+		&--color {
+			width: 2.5rem;
+			padding-left: 0;
+			padding-right: 0;
+			vertical-align: middle;
+		}
+
+		&--label {
+			text-align: left;
+			font-weight: 500;
+		}
+
+		&--value {
+			text-align: right;
+			font-weight: 700;
+		}
+
+		&--share {
+			text-align: right;
+			opacity: 0.8;
+			width: 5rem;
+		}
+	}
+
+	// --- Motion -------------------------------------------------------------
+	&--motion {
+		.cui-line-chart__line {
+			animation: cui-line-in 520ms ease-out backwards;
+			animation-delay: var(--cui-line-delay, 0ms);
+		}
+
+		// Animation runs on the inner `__point-anim` <g>, NOT the outer
+		// `__point`. The outer carries the positioning translate; SVG
+		// only honours one `transform` per element, so animating the
+		// outer would replace the translate and the marker would
+		// scale-in from (0,0) and then snap to its data point at the
+		// end of the animation (the "pop" we saw before).
+		.cui-line-chart__point-anim {
+			animation: cui-point-in 480ms cubic-bezier(0.2, 0.8, 0.2, 1)
+				backwards;
+			animation-delay: var(--cui-marker-delay, 0ms);
+			transform-box: fill-box;
+			transform-origin: center;
+		}
+	}
+}
+
+@keyframes cui-line-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes cui-point-in {
+	from {
+		opacity: 0;
+		transform: scale(0);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+// Same dual reduced-motion safety net the other charts use.
+@media (prefers-reduced-motion: reduce) {
+	.cui-line-chart__line,
+	.cui-line-chart__point-anim {
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
+body.c-prefers-reduced-motion .cui-line-chart__line,
+body.c-prefers-reduced-motion .cui-line-chart__point-anim {
+	animation: none !important;
+	transition: none !important;
+}

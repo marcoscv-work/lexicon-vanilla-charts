@@ -43,6 +43,14 @@ const STORIES = [
 	'charts-mapchart--choropleth-categorical',
 	'charts-mapchart--responsive',
 	'charts-mapchart--reduced-motion',
+	'charts-linechart--default',
+	'charts-linechart--categorical',
+	'charts-linechart--single-series',
+	'charts-linechart--nine-series',
+	'charts-linechart--legend-table',
+	'charts-linechart--with-gaps',
+	'charts-linechart--reduced-motion',
+	'charts-linechart--keyboard-navigation',
 ];
 
 const browser = await puppeteer.launch({headless: 'new'});
