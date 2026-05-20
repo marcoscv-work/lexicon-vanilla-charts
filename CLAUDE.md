@@ -20,13 +20,13 @@ new-charts/
 │   └── a11y-scan.mjs          # puppeteer + axe-core headless scan
 └── src/
     ├── index.ts               # public exports
-    ├── tokens.ts              # JS mirror of the chart palette + family metadata
+    ├── tokens.ts              # JS mirror of the chart palette + family metadata + extended palette
     ├── styles/
     │   ├── _tokens.scss       # Clay-named CSS vars (mirrors Light.tokens.json)
     │   └── global.scss        # body reset + .cui-sr-only
     ├── a11y/
     │   ├── contrast.ts        # WCAG luminance helpers (unused at runtime; kept for tests)
-    │   ├── palette.ts         # getAccessibleSeries(n) — returns CSS-var references
+    │   ├── palette.ts         # getAccessibleSeries(n) — cycles base → extended → wrap
     │   └── useReducedMotion.ts
     └── components/
         ├── BarChart/
@@ -37,27 +37,36 @@ new-charts/
         │   ├── PieChart.tsx
         │   ├── PieChart.scss
         │   ├── PieChart.stories.tsx
-        │   └── geometry.ts    # buildSlices(values, cx, cy, rOuter, rInner)
+        │   └── geometry.ts                # buildSlices(values, cx, cy, rOuter, rInner)
+        ├── LineChart/
+        │   ├── LineChart.tsx
+        │   ├── LineChart.scss
+        │   ├── LineChart.stories.tsx
+        │   └── markers.tsx                # 9 shape renderers + 9 dash patterns
         └── MapChart/
             ├── MapChart.tsx
             ├── MapChart.scss
             ├── MapChart.stories.tsx
-            ├── world-map.svg  # base art (imported via Vite ?raw)
-            ├── countries.ts   # ISO + lat/lon for ~55 countries
-            └── projection.ts  # piecewise-linear lat/lon → SVG mapping
+            ├── world-map.svg              # stylised base art for markers variant
+            ├── countries.ts               # ISO + lat/lon + hand-calibrated x/y for ~55 countries
+            ├── projection.ts              # viewBox re-export (lat/lon NOT used to position)
+            ├── MapChartChoropleth.tsx     # EXPERIMENTAL — gated by variant='choropleth'
+            ├── MapChartChoropleth.scss
+            └── _experimental-countries-map.svg  # CC BY-SA 3.0 per-country SVG (ISO ids)
 ```
 
 ## Naming conventions
 
 - Class prefix is `cui-` (Clay UI). Block / element / modifier per BEM.
 - CSS custom properties use the **bare** Clay names (`--primary`,
-  `--primary-l0`, `--yellow-l2`, `--white`, `--dark-d1`, ...). When the
-  package is promoted into the main Clay repo, the
+  `--primary-l0`, `--yellow-l2`, `--blue-d2`, `--white`, `--dark-d1`,
+  …). When the package is promoted into the main Clay repo the
   `_tokens.scss` redeclarations become redundant — Clay's global
   stylesheet already exposes the same names. **Do not invent new
   `--cui-*` aliases for tokens that already exist in Clay.**
 - Slot vars set per element (e.g. `--cui-slice-fill`,
-  `--cui-slice-delay`, `--cui-bar-delay`) keep the `cui-` prefix —
+  `--cui-marker-fill`, `--cui-bar-delay`, `--cui-line-stroke`,
+  `--cui-line-dash`, `--cui-country-fill`) keep the `cui-` prefix —
   they're internal to a component, not theme tokens.
 
 ## Architectural rules I had to learn the hard way
@@ -111,14 +120,20 @@ question.
 shape. Instead we render two extra `<path>` overlays per focused
 slice, clipped to the slice itself via `<clipPath>`:
 
-- 8px white stroke (4px visible inside the slice edge)
-- 4px primary-l0 stroke on top (outermost 2px stays primary)
+- 8 px white stroke (4 px visible inside the slice edge)
+- 4 px primary-l0 stroke on top (outermost 2 px stays primary)
 
-Net effect from the edge inward: 2px primary, 2px white, then the
+Net effect from the edge inward: 2 px primary, 2 px white, then the
 slice colour. The same trick works on the inner ring edge for free.
 
-If you redesign focus, keep the clipPath approach — anything based on
-`outline` or `filter: drop-shadow` won't follow the slice contour.
+LineChart can't use the clipPath-stroke approach because the markers
+are too small for a meaningful inside-stroke band. Instead it
+re-emits the same marker shape at scales 2.0 (primary) and 1.5
+(white) **under** the marker — see rule 9.
+
+If you redesign focus, keep one of those two approaches — anything
+based on `outline` or `filter: drop-shadow` won't follow the slice /
+marker contour.
 
 ### 5. The slice stroke is the WCAG 1.4.11 separator, not the colour pair
 
@@ -128,13 +143,18 @@ the wraparound is mathematically impossible to satisfy with the
 curated palette. More importantly, forcing it produces ugly
 alternating dark/light charts.
 
-**Therefore**: we keep the slice stroke (2px `--white`) as the formal
+**Therefore**: we keep the slice stroke (2 px `--white`) as the formal
 separator. WCAG 1.4.11 is satisfied by the stroke; the palette can be
 chosen for hue/aesthetics.
 
-If a consumer disables the stroke, they re-enter "colours must
-contrast" territory and `getAccessibleSeries` is no longer enough on
-its own.
+LineChart leans on **marker shape + dash pattern** for the same job —
+two consecutive series carry different shapes and different dash
+patterns, so colour-blind users still get nine cleanly distinguishable
+lines even in `scheme='blue'` (everything is `--primary-l0`).
+
+If a consumer disables the stroke (or removes marker shapes), they
+re-enter "colours must contrast" territory and `getAccessibleSeries`
+is no longer enough on its own.
 
 ### 6. ARIA: SVG isn't the image, the figure is
 
@@ -145,8 +165,8 @@ contradiction.
 **Therefore**: `<svg>` has no `role` and no `aria-hidden`. The
 `<figure>` provides naming (`aria-labelledby` + `<figcaption>`) and
 description (`aria-describedby` + an sr-only `<p>` summarising every
-datum). Individual bars/slices keep their own `role="img"` +
-`aria-label`.
+datum). Individual bars / slices / markers / line points keep their
+own `role="img"` + `aria-label`.
 
 ### 7. Marker positions are a per-country pixel table, not a projection
 
@@ -187,6 +207,109 @@ violations from iframe-shell violations (`landmark-one-main`,
 `<h1>` to silence the shell warnings. **Do not delete that wrapper
 without replacing it.**
 
+### 9. CSS animations on an SVG `<g>` replace its positioning transform
+
+A LineChart data-point `<g>` carries its position via the SVG
+`transform="translate(cx,cy)"` attribute. Running a CSS animation that
+keyframes `transform: scale(...)` on the **same** `<g>` replaces the
+translate during the animation: the marker scales in from `(0,0)` and
+then "pops" to its data point at the end. (SVG / CSS only honour one
+`transform` per element.)
+
+**Therefore**: marker reveal animations run on an **inner**
+`__point-anim` `<g>` wrapping the visuals. The outer `__point` keeps
+the positioning translate and the interactive props (tabIndex,
+role, aria-label, focus/hover handlers); the inner is the CSS
+animation target. Splitting them keeps position and animation on
+separate `transform`s.
+
+Same principle applies anywhere we mix an SVG-attribute transform with
+a CSS animated transform. **Never animate the same `<g>` that owns the
+positioning translate.**
+
+### 10. Line markers are parametric so the focus halo can scale uniformly
+
+LineChart has nine marker shapes (`circle`, `square`, `triangle`,
+`diamond`, `triangle-down`, `d-up`, `d-down`, `bar-h`, `bar-v`). The
+Lexicon focus pattern is "2 px primary + 2 px white around the
+marker" — we replicate it by re-emitting the **same** marker shape at
+scales 2.0 (primary band) and 1.5 (white band) underneath the marker,
+so the ring traces the marker's silhouette.
+
+This only works because every shape is defined by a single `size`
+parameter and centred on the origin. If you add a new marker shape,
+keep that shape — anything that branches by aspect ratio or uses
+explicit width/height instead of `size` breaks the focus halo for
+the asymmetric variants.
+
+The pattern is exact for `circle`, `square`, `diamond` and the
+triangles. For `bar-h` / `bar-v` the visible band on the **short** axis
+is thinner than 2 px because uniform scaling halves the short-axis
+padding. The ring is still clearly visible — the asymmetric band is
+the documented trade-off.
+
+### 11. `legend='table'` suppresses the per-datum sr-only summary
+
+MapChart / PieChart / BarChart / LineChart all support `legend='table'`
+to render the data as a real semantic `<table>` below the canvas (with
+`<th scope="col">` headers and `<th scope="row">` on the
+label/country/series name). When that mode is on, the per-datum
+`aria-describedby` summary on the figure is suppressed — otherwise AT
+users hear the same data twice (the table reads identically to the
+dump). Only the user-provided `description` survives.
+
+If you add a new chart type with a table-legend variant, mirror the
+same suppression in the `summary` memo. If you add another semantic
+representation later (e.g. a real `<dl>`), apply the same rule.
+
+### 12. The extended palette only appends; the base 10 are stable API
+
+`getAccessibleSeries(n)` cycles `CHART_FAMILY_ORDER` (slots 0–9) first,
+then `CHART_EXTENDED_PALETTE` (slots 10–19), then wraps. For `n ≤ 10`
+the function is byte-identical to the pre-extension version — the
+first ten slots are considered **stable API** and consumers may rely
+on the specific colours.
+
+When adding new slots: **append** to `CHART_EXTENDED_PALETTE`. Do not
+reorder, do not re-shade, do not insert in the middle. Each new entry
+must be an already-existing Clay/Lexicon chart token — pick a shade
+from `Color.Charts.{Family}` in `Light.tokens.json` rather than
+inventing a hex.
+
+### 13. The choropleth variant is experimental and self-contained
+
+`<MapChart variant='choropleth' />` is gated behind a prop, with the
+whole implementation in three isolated files:
+
+- `MapChartChoropleth.tsx`
+- `MapChartChoropleth.scss`
+- `_experimental-countries-map.svg`
+
+Reversion is "delete those three files + revert the prop / branch /
+ref triplet in `MapChart.tsx`". Don't entangle the choropleth code
+with the markers code — that's what the variant prop is for.
+
+Other implementation notes worth carrying forward:
+
+- The country SVG (CC BY-SA 3.0, from
+  [flekschas/simple-world-map](https://github.com/flekschas/simple-world-map))
+  encodes country paths as ISO 3166-1 alpha-2 ids (lowercase).
+  Multi-part countries appear as `<g id="xx"><path .../></g>`; simple
+  countries appear as `<path id="xx" .../>`.
+- The SVG is parsed once at module init into a `Map<iso, d[]>` so the
+  focus ring `clipPath` overlay can render every sub-path of the
+  focused country (US + Alaska, AU + Tasmania, CA, ES, …). If you
+  swap the base SVG, audit `parseCountryPaths` in
+  `MapChartChoropleth.tsx` — the regex assumes the two structural
+  patterns above.
+- The component splits its layout effects into "structural" (depends
+  on `enriched` only, sets the data-iso/tabindex/role/aria classes
+  once) and "fill" (depends on `palette`/`bucket`, only writes the
+  `--cui-country-fill` CSS variable). This avoids strip-and-readd-ing
+  `.is-data` on every `palette` reference change — which would
+  otherwise restart every reveal animation on every focus/hover.
+  Same shape applies to any future variant that uses an injected SVG.
+
 ## Testing
 
 There is no unit test runner today. Coverage comes from:
@@ -202,12 +325,23 @@ new stories.
 ## When working on this codebase
 
 - Don't add a new `--cui-*` token if Clay already exposes the same
-  thing under its own name (`--primary`, `--yellow-l2`, ...).
+  thing under its own name (`--primary`, `--yellow-l2`, `--blue-d2`,
+  …).
 - Don't reintroduce `container-type: inline-size` on the chart root.
 - Don't move the focus indicator off the clipPath overlay approach
-  without making sure it still follows the slice contour.
+  (pie) or the scaled-shape overlay approach (line / map markers)
+  without making sure it still follows the slice / marker contour.
 - Don't translate slices on hover.
+- Don't animate the same SVG `<g>` that owns a positioning
+  `transform="translate(...)"` attribute — wrap the visuals in an
+  inner `<g>` and animate that one.
+- Don't reorder or re-shade `CHART_FAMILY_ORDER` or
+  `CHART_EXTENDED_PALETTE` — append only.
+- Don't entangle `MapChartChoropleth` code into `MapChart`. The
+  variant prop is the seam.
 - Animations must be gated by both the React hook and a CSS fallback.
+- New chart components with a `legend='table'` variant must suppress
+  the per-datum `aria-describedby` summary in that mode.
 - Every change must keep `npm run typecheck` green and
   `node scripts/a11y-scan.mjs` at zero violations.
 
@@ -216,10 +350,11 @@ new stories.
 These come up periodically — they are **explicitly** not part of this
 package:
 
-- Multi-series bar charts, stacked bars, axes/grids.
-- Tooltips (the inline chip + center label cover the same UX).
+- Multi-series / stacked bar charts.
+- Multi-value crosshair tooltips on the line chart (popover shows the
+  active point only — common pattern is enough for the POC).
 - A separate icon component, theme provider, or design-token loader —
   Clay already has all of that.
-- Build/bundling. Source ships as TS. Type-only build via
+- Build / bundling. Source ships as TS. Type-only build via
   `tsc -p tsconfig.build.json` is enough until this lands in Clay's
   monorepo.
