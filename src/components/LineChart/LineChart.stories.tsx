@@ -15,12 +15,17 @@ const meta: Meta<typeof LineChart> = {
 			control: {type: 'inline-radio'},
 			options: ['list', 'table', 'none'],
 		},
+		pointTooltip: {
+			control: {type: 'inline-radio'},
+			options: ['popover', 'corner', 'none'],
+		},
 	},
 	args: {
 		title: 'Value per year',
 		animated: true,
 		scheme: 'blue',
 		legend: 'list',
+		pointTooltip: 'popover',
 		width: 640,
 		height: 320,
 	},
@@ -122,6 +127,38 @@ export const NineSeries: Story = {
 			description: {
 				story:
 					'Each of the 9 marker shapes paired with the matching dash pattern from the reference matrix. Hover the legend or focus a point with `Tab` to see how the focus halo follows the shape.',
+			},
+		},
+	},
+};
+
+export const PopoverTooltip: Story = {
+	args: {
+		series: sample,
+		categories: months,
+		pointTooltip: 'popover',
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'`pointTooltip="popover"` (the default) anchors the value chip to the focused / hovered marker with a small arrow pointing down at the data point — so the value reads next to the intersection it belongs to, instead of in the top-left corner. Position is set as a percentage of the SVG viewBox, so it stays aligned when the chart is rendered narrower than the `width` prop.',
+			},
+		},
+	},
+};
+
+export const CornerTooltip: Story = {
+	args: {
+		series: sample,
+		categories: months,
+		pointTooltip: 'corner',
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'`pointTooltip="corner"` pins the value chip to the top-left of the canvas (MapChart\'s pattern). Useful when many points overlap and an anchored popover would jitter as the cursor moves between them.',
 			},
 		},
 	},

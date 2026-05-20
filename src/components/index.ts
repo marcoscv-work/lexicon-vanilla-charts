@@ -23,6 +23,7 @@ export type {
 	LineSeries,
 	LineChartScheme,
 	LineChartLegend,
+	LineChartTooltip,
 } from './LineChart/LineChart';
 export {
 	LINE_DASH_PATTERNS,

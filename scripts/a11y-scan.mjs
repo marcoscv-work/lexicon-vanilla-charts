@@ -47,6 +47,8 @@ const STORIES = [
 	'charts-linechart--categorical',
 	'charts-linechart--single-series',
 	'charts-linechart--nine-series',
+	'charts-linechart--popover-tooltip',
+	'charts-linechart--corner-tooltip',
 	'charts-linechart--legend-table',
 	'charts-linechart--with-gaps',
 	'charts-linechart--reduced-motion',

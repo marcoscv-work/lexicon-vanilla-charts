@@ -108,16 +108,14 @@
 	}
 
 	// --- Tooltip ------------------------------------------------------------
-	// Mirrors MapChart's chip placement (absolute top-left of the canvas)
-	// so the tooltip never collides with the marker hit area — moving
-	// the chip with the cursor was tried for the other charts and the
-	// flicker at chart edges wasn't worth it.
+	// Two flavours share the same chip styling. The `--corner` variant
+	// pins the chip to the top-left of the canvas (MapChart's pattern),
+	// the `--popover` variant anchors it to the active marker with an
+	// arrow pointing down. The inline `left` / `top` are set in the
+	// component as percentages of the SVG so the popover stays aligned
+	// when `max-width: 100%` shrinks the chart.
 	&__tooltip {
 		position: absolute;
-		top: 0;
-		left: 0;
-		background: var(--primary);
-		color: var(--white);
 		padding: 0.25rem 0.625rem;
 		border-radius: 4px;
 		font-size: 0.8125rem;
@@ -129,8 +127,58 @@
 		max-width: 100%;
 	}
 
+	&__tooltip--corner {
+		top: 0;
+		left: 0;
+		background: var(--primary);
+		color: var(--white);
+	}
+
+	// Anchored popover above the active marker. Dark background mirrors
+	// the typical platform tooltip convention (Material / Apple) and
+	// reads as a different surface from the primary-coloured corner
+	// chip / legend active state.
+	&__tooltip--popover {
+		background: var(--dark);
+		color: var(--white);
+		// The inline `left` / `top` place the chip's origin at the
+		// marker coords; `translate` shifts it above the marker
+		// (-100% lifts the chip, the extra 10 px is the gap to the
+		// marker + arrow).
+		transform: translate(-50%, calc(-100% - 10px));
+		white-space: nowrap;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+		&::after {
+			// Downward-pointing arrow under the chip.
+			content: '';
+			position: absolute;
+			top: 100%;
+			left: 50%;
+			transform: translateX(-50%);
+			border: 5px solid transparent;
+			border-top-color: var(--dark);
+			width: 0;
+			height: 0;
+		}
+	}
+
+	// Flipped below the marker — used when the active point sits near
+	// the top edge of the chart so the chip doesn't overlap the title.
+	&__tooltip--popover.cui-line-chart__tooltip--below {
+		transform: translate(-50%, 10px);
+
+		&::after {
+			top: auto;
+			bottom: 100%;
+			border-top-color: transparent;
+			border-bottom-color: var(--dark);
+		}
+	}
+
 	&__tooltip-label {
 		font-weight: 400;
+		opacity: 0.85;
 	}
 
 	&__tooltip-value {

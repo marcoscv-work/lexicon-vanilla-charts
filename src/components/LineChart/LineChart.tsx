@@ -58,6 +58,22 @@ export type LineChartScheme = 'blue' | 'categorical';
  */
 export type LineChartLegend = 'list' | 'table' | 'none';
 
+/**
+ * Active-point chip placement.
+ *
+ * - `popover` (default): the chip is anchored to the focused / hovered
+ *   marker and sits just above it with a small arrow pointing down at
+ *   the data point. Stays aligned even if the chart is rendered at a
+ *   different size (the position is expressed as a percentage of the
+ *   viewBox).
+ * - `corner`: the chip is pinned to the top-left of the canvas
+ *   (MapChart's pattern). Useful when many points overlap and the
+ *   anchored variant would jitter as the cursor moves between them.
+ * - `none`: no chip — useful when the legend / table is the primary
+ *   surface and the chart is purely visual.
+ */
+export type LineChartTooltip = 'popover' | 'corner' | 'none';
+
 export interface LineChartProps {
 	/** One entry per data series. */
 	series: LineSeries[];
@@ -75,6 +91,11 @@ export interface LineChartProps {
 	scheme?: LineChartScheme;
 	/** Legend layout. See `LineChartLegend`. Default `list`. */
 	legend?: LineChartLegend;
+	/**
+	 * Where the active-point value chip renders. See
+	 * `LineChartTooltip`. Default `popover` (anchored to the marker).
+	 */
+	pointTooltip?: LineChartTooltip;
 	/** Accessible name for the chart as a whole. */
 	title: string;
 	/** Optional accessible long description. */
@@ -126,6 +147,7 @@ export function LineChart({
 	yFormat,
 	scheme = 'blue',
 	legend = 'list',
+	pointTooltip = 'popover',
 	title,
 	description,
 	animated = true,
@@ -575,10 +597,35 @@ export function LineChart({
 						)}
 					</g>
 				</svg>
-				{activeInfo && (
+				{activeInfo && pointTooltip !== 'none' && (
 					<div
-						className="cui-line-chart__tooltip"
+						className={[
+							'cui-line-chart__tooltip',
+							`cui-line-chart__tooltip--${pointTooltip}`,
+							// Flip the popover below the marker when the
+							// active point sits in the top 25 % of the
+							// canvas so the chip doesn't collide with
+							// the chart title.
+							pointTooltip === 'popover' &&
+								activeInfo.y / height < 0.25 &&
+								'cui-line-chart__tooltip--below',
+						]
+							.filter(Boolean)
+							.join(' ')}
 						aria-hidden="true"
+						style={
+							pointTooltip === 'popover'
+								? {
+										// SVG coords → percentage of the
+										// canvas. Stays aligned with the
+										// marker even if `max-width: 100%`
+										// shrinks the SVG in a narrow
+										// parent.
+										left: `${(activeInfo.x / width) * 100}%`,
+										top: `${(activeInfo.y / height) * 100}%`,
+									}
+								: undefined
+						}
 					>
 						<span className="cui-line-chart__tooltip-label">
 							{activeInfo.series.label} · {activeInfo.category}
