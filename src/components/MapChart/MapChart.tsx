@@ -9,6 +9,10 @@ import {
 } from 'react';
 import {useReducedMotion} from '../../a11y/useReducedMotion';
 import {COUNTRY_COORDS, lookupCountry} from './countries';
+import {
+	MapChartChoropleth,
+	type ChoroplethCanvasHandle,
+} from './MapChartChoropleth';
 import {MAP_VIEWBOX} from './projection';
 import worldSvg from './world-map.svg?raw';
 import './MapChart.scss';
@@ -38,6 +42,18 @@ export type MapColorScheme = 'blue' | 'categorical';
 export type MapChartFit = 'world' | 'data';
 
 export type MapChartLegend = 'scale' | 'list' | 'none';
+
+/**
+ * EXPERIMENTAL — rendering style.
+ *
+ * - `markers` (default): the current proportional-symbol map (dots
+ *   placed on hand-calibrated x/y per country).
+ * - `choropleth`: the country itself is filled with the bucket colour
+ *   (uses `MapChartChoropleth` + `_experimental-countries-map.svg`).
+ *   The `fit` prop is ignored — the choropleth always renders the full
+ *   world. Reversion notes in `MapChartChoropleth.tsx`.
+ */
+export type MapChartVariant = 'markers' | 'choropleth';
 
 export interface MapChartProps {
 	data: MapDatum[];
@@ -74,6 +90,10 @@ export interface MapChartProps {
 	 * - `none`: no legend.
 	 */
 	legend?: MapChartLegend;
+	/**
+	 * EXPERIMENTAL — see `MapChartVariant`. Default `markers`.
+	 */
+	variant?: MapChartVariant;
 	/** Accessible name for the chart as a whole. */
 	title: string;
 	/** Optional accessible long description. */
@@ -132,11 +152,13 @@ export function MapChart({
 	steps = 5,
 	fit = 'world',
 	legend = 'scale',
+	variant = 'markers',
 	title,
 	description,
 	animated = true,
 	className,
 }: MapChartProps) {
+	const isChoropleth = variant === 'choropleth';
 	const reactId = useId();
 	const titleId = `${reactId}-title`;
 	const descId = `${reactId}-desc`;
@@ -148,12 +170,41 @@ export function MapChart({
 	const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 	const activeIndex = focusIndex ?? hoverIndex;
 	const markerRefs = useRef<Array<SVGCircleElement | null>>([]);
+	const choroplethRef = useRef<ChoroplethCanvasHandle | null>(null);
+
+	// Shared hover/focus handlers so the choropleth variant can drive the
+	// same `activeIndex` state the markers variant does.
+	const onEnterIndex = useCallback(
+		(i: number) => setHoverIndex(i),
+		[]
+	);
+	const onLeaveIndex = useCallback(
+		(i: number) =>
+			setHoverIndex((cur) => (cur === i ? null : cur)),
+		[]
+	);
+	const onFocusIndex = useCallback(
+		(i: number) => setFocusIndex(i),
+		[]
+	);
+	const onBlurIndex = useCallback(
+		(i: number) =>
+			setFocusIndex((cur) => (cur === i ? null : cur)),
+		[]
+	);
 
 	const clampedSteps = Math.max(
 		2,
 		Math.min(SCHEMES[scheme].length, Math.floor(steps))
 	);
-	const palette = SCHEMES[scheme].slice(0, clampedSteps);
+	// Memoise — `.slice()` on every render would otherwise hand a new
+	// array identity to the choropleth canvas, restarting all reveal
+	// animations every time `activeIndex` changes (i.e. on every focus
+	// or hover).
+	const palette = useMemo(
+		() => SCHEMES[scheme].slice(0, clampedSteps),
+		[scheme, clampedSteps]
+	);
 
 	const enriched = useMemo(
 		() =>
@@ -267,9 +318,16 @@ export function MapChart({
 
 	const active = activeIndex != null ? enriched[activeIndex] : null;
 
-	const focusMarker = useCallback((idx: number) => {
-		markerRefs.current[idx]?.focus();
-	}, []);
+	const focusMarker = useCallback(
+		(idx: number) => {
+			if (isChoropleth) {
+				choroplethRef.current?.focusIndex(idx);
+			} else {
+				markerRefs.current[idx]?.focus();
+			}
+		},
+		[isChoropleth]
+	);
 
 	// Per-country legend (sorted by value desc) for `legend="list"`.
 	const legendItems = useMemo(() => {
@@ -284,6 +342,7 @@ export function MapChart({
 			className={[
 				'cui-map-chart',
 				`cui-map-chart--${scheme}`,
+				`cui-map-chart--variant-${variant}`,
 				`cui-map-chart--legend-${legend}`,
 				motionOn && 'cui-map-chart--motion',
 				className,
@@ -301,6 +360,21 @@ export function MapChart({
 			</p>
 			<div className="cui-map-chart__body">
 				<div className="cui-map-chart__canvas">
+				{isChoropleth ? (
+					<MapChartChoropleth
+						ref={choroplethRef}
+						enriched={enriched}
+						palette={palette}
+						bucket={bucket}
+						activeIndex={activeIndex}
+						focusIndex={focusIndex}
+						motionOn={motionOn}
+						onEnterIndex={onEnterIndex}
+						onLeaveIndex={onLeaveIndex}
+						onFocusIndex={onFocusIndex}
+						onBlurIndex={onBlurIndex}
+					/>
+				) : (
 				<svg
 					viewBox={viewBox}
 					preserveAspectRatio="xMidYMid meet"
@@ -420,6 +494,7 @@ export function MapChart({
 						</g>
 					)}
 				</svg>
+				)}
 				{active && (
 					<div
 						className="cui-map-chart__tooltip"

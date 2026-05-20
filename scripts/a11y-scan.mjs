@@ -29,6 +29,8 @@ const STORIES = [
 	'charts-mapchart--legend-list-categorical',
 	'charts-mapchart--fit-to-data-europe',
 	'charts-mapchart--fit-to-data-asia',
+	'charts-mapchart--choropleth-blue',
+	'charts-mapchart--choropleth-categorical',
 	'charts-mapchart--responsive',
 	'charts-mapchart--reduced-motion',
 ];

@@ -18,6 +18,10 @@ const meta: Meta<typeof MapChart> = {
 			control: {type: 'inline-radio'},
 			options: ['scale', 'list', 'none'],
 		},
+		variant: {
+			control: {type: 'inline-radio'},
+			options: ['markers', 'choropleth'],
+		},
 		steps: {control: {type: 'range', min: 2, max: 5, step: 1}},
 	},
 	args: {
@@ -27,6 +31,7 @@ const meta: Meta<typeof MapChart> = {
 		steps: 5,
 		fit: 'world',
 		legend: 'scale',
+		variant: 'markers',
 	},
 };
 
@@ -227,6 +232,35 @@ export const Responsive: Story = {
 			description: {
 				story:
 					'The SVG uses `viewBox` + `width: 100%; height: auto`, so the map scales fluidly with its container. Drag the bottom-right corner of the wrapper to shrink it.',
+			},
+		},
+	},
+};
+
+export const ChoroplethBlue: Story = {
+	args: {data: sample, scheme: 'blue', variant: 'choropleth'},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'**Experimental.** `variant="choropleth"` fills each country with its bucket colour instead of dropping a dot on top. Uses a separate per-country SVG (CC BY-SA 3.0, from flekschas/simple-world-map) with ISO 3166-1 alpha-2 ids. `fit="data"` is ignored — the choropleth always shows the full world.',
+			},
+		},
+	},
+};
+
+export const ChoroplethCategorical: Story = {
+	args: {
+		data: sample,
+		scheme: 'categorical',
+		variant: 'choropleth',
+		legend: 'list',
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'Choropleth variant with the categorical scheme and the list legend. Clicking a row focuses the matching country path.',
 			},
 		},
 	},
