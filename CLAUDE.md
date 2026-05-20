@@ -148,23 +148,30 @@ description (`aria-describedby` + an sr-only `<p>` summarising every
 datum). Individual bars/slices keep their own `role="img"` +
 `aria-label`.
 
-### 7. The map projection is hand-tuned, not Mercator
+### 7. Marker positions are a per-country pixel table, not a projection
 
 `world-map.svg` is a stylised artwork, not a mathematical projection.
-The Americas are visually compressed inward and the southern hemisphere
-is stretched — a single linear or Mercator fit puts markers in the
-wrong continent.
+The Americas are visually compressed inward, the southern hemisphere
+is stretched, and Europe is enlarged. Any single linear/Mercator fit —
+even piecewise per hemisphere — leaves entire regions on the wrong
+landmass (Ireland in the Atlantic, Brazil in the Pacific, Argentina
+in Chile).
 
-**Therefore**: `src/components/MapChart/projection.ts` uses a piecewise
-linear fit calibrated against five visual anchors (London, mid-USA,
-Tokyo, São Paulo, Sydney). Different `LON_SCALE` and `LAT_SCALE`
-constants per hemisphere. Sub-degree accuracy was not the goal — the
-markers land in the right region and the legend conveys density.
+**Therefore**: every entry in `src/components/MapChart/countries.ts`
+carries a hand-calibrated `x` / `y` inside the `558 × 282` SVG viewBox.
+The `lat` / `lon` is kept for documentation and accessible labels but
+**not** used to position the marker. `projection.ts` only re-exports
+the viewBox.
 
-**If you swap the base SVG, re-calibrate the constants.** Don't try to
-use a real projection library — that's a much bigger dependency than
-this POC needs, and the artwork is hand-drawn anyway so any "correct"
-projection will still be off.
+To calibrate a new country: render the SVG with a grid overlay, pick
+the pixel that lands on its landmass, iterate until the marker hits the
+right region. Earlier attempts at a piecewise lat/lon fit are in the
+git history and **should not be revived** — the artwork is too uneven.
+
+**If you swap the base SVG, every `x` / `y` in `countries.ts` must be
+re-calibrated.** Don't try to use a real projection library — that's a
+much bigger dependency than this POC needs, and the artwork is
+hand-drawn anyway so any "correct" projection will still be off.
 
 The base SVG is imported via Vite's `?raw` query and injected via
 `dangerouslySetInnerHTML` so its paths can be themed through a single

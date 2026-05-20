@@ -9,7 +9,7 @@ import {
 } from 'react';
 import {useReducedMotion} from '../../a11y/useReducedMotion';
 import {COUNTRY_COORDS, lookupCountry} from './countries';
-import {MAP_VIEWBOX, projectLonLat} from './projection';
+import {MAP_VIEWBOX} from './projection';
 import worldSvg from './world-map.svg?raw';
 import './MapChart.scss';
 
@@ -161,8 +161,7 @@ export function MapChart({
 				.map((d) => {
 					const country = lookupCountry(d.country);
 					if (!country) return null;
-					const {x, y} = projectLonLat(country.lon, country.lat);
-					return {datum: d, country, x, y};
+					return {datum: d, country, x: country.x, y: country.y};
 				})
 				.filter(
 					(v): v is {
