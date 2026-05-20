@@ -41,7 +41,7 @@ export type MapColorScheme = 'blue' | 'categorical';
 
 export type MapChartFit = 'world' | 'data';
 
-export type MapChartLegend = 'scale' | 'list' | 'none';
+export type MapChartLegend = 'scale' | 'list' | 'table' | 'none';
 
 /**
  * EXPERIMENTAL — rendering style.
@@ -87,6 +87,13 @@ export interface MapChartProps {
 	 * - `list`: a per-country list to the right of the canvas (sorted
 	 *   by value, highest first) — same shape as the PieChart legend.
 	 *   Each row is clickable and focuses the matching marker.
+	 * - `table`: a Google-Analytics-style table BELOW the canvas with
+	 *   rank, colour swatch, country, value and share of total. The
+	 *   table is the primary representation (real semantic `<table>`
+	 *   readable by screen readers) — the per-datum sr-only summary
+	 *   is suppressed in this mode so AT users don't hear the data
+	 *   twice. Rows are clickable and sync the active state with
+	 *   the map.
 	 * - `none`: no legend.
 	 */
 	legend?: MapChartLegend;
@@ -272,6 +279,10 @@ export function MapChart({
 	}, [viewBox]);
 
 	const summary = useMemo(() => {
+		// `legend="table"` renders a real semantic <table> below the
+		// canvas — that is the screen-reader-friendly representation in
+		// that mode, so we skip the per-datum dump to avoid duplication.
+		if (legend === 'table') return description ?? '';
 		const parts = enriched
 			.slice()
 			.sort((a, b) => b.datum.value - a.datum.value)
@@ -281,7 +292,7 @@ export function MapChart({
 					`${e.country.name}: ${e.datum.value}`
 			);
 		return [description, ...parts].filter(Boolean).join('. ');
-	}, [enriched, description]);
+	}, [enriched, description, legend]);
 
 	const onMarkerKeyDown = useCallback(
 		(e: KeyboardEvent<SVGCircleElement>, idx: number) => {
@@ -329,12 +340,24 @@ export function MapChart({
 		[isChoropleth]
 	);
 
-	// Per-country legend (sorted by value desc) for `legend="list"`.
+	// Per-country legend (sorted by value desc) for `legend="list"` and
+	// `legend="table"`. The `table` variant additionally carries `rank`
+	// and `share` (% of total) — both derived here once instead of in
+	// the render path.
 	const legendItems = useMemo(() => {
-		if (legend !== 'list') return [];
+		if (legend !== 'list' && legend !== 'table') return [];
+		const total = enriched.reduce(
+			(acc, e) => acc + Math.max(0, e.datum.value),
+			0
+		);
 		return enriched
 			.map((e, i) => ({...e, dataIndex: i}))
-			.sort((a, b) => b.datum.value - a.datum.value);
+			.sort((a, b) => b.datum.value - a.datum.value)
+			.map((item, sortedIdx) => ({
+				...item,
+				rank: sortedIdx + 1,
+				share: total > 0 ? item.datum.value / total : 0,
+			}));
 	}, [enriched, legend]);
 
 	return (
@@ -552,6 +575,95 @@ export function MapChart({
 				</ul>
 			)}
 			</div>
+			{legend === 'table' && (
+				<table
+					className="cui-map-chart__legend-table"
+					aria-labelledby={titleId}
+				>
+					<thead>
+						<tr>
+							<th
+								scope="col"
+								className="cui-map-chart__legend-table-th cui-map-chart__legend-table-th--rank"
+							>
+								#
+							</th>
+							<th
+								scope="col"
+								className="cui-map-chart__legend-table-th cui-map-chart__legend-table-th--color"
+							>
+								<span className="cui-sr-only">Colour</span>
+							</th>
+							<th
+								scope="col"
+								className="cui-map-chart__legend-table-th cui-map-chart__legend-table-th--label"
+							>
+								Country
+							</th>
+							<th
+								scope="col"
+								className="cui-map-chart__legend-table-th cui-map-chart__legend-table-th--value"
+							>
+								Value
+							</th>
+							<th
+								scope="col"
+								className="cui-map-chart__legend-table-th cui-map-chart__legend-table-th--share"
+							>
+								Share
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						{legendItems.map((item) => {
+							const isActive = activeIndex === item.dataIndex;
+							const color = palette[bucket(item.datum.value)];
+							return (
+								<tr
+									key={item.country.iso}
+									className={[
+										'cui-map-chart__legend-row',
+										isActive && 'is-active',
+									]
+										.filter(Boolean)
+										.join(' ')}
+									onMouseEnter={() =>
+										setHoverIndex(item.dataIndex)
+									}
+									onMouseLeave={() =>
+										setHoverIndex((cur) =>
+											cur === item.dataIndex ? null : cur
+										)
+									}
+									onClick={() => focusMarker(item.dataIndex)}
+								>
+									<td className="cui-map-chart__legend-cell cui-map-chart__legend-cell--rank">
+										{item.rank}
+									</td>
+									<td className="cui-map-chart__legend-cell cui-map-chart__legend-cell--color">
+										<span
+											className="cui-map-chart__legend-swatch"
+											style={{background: color}}
+										/>
+									</td>
+									<th
+										scope="row"
+										className="cui-map-chart__legend-cell cui-map-chart__legend-cell--label"
+									>
+										{item.country.name}
+									</th>
+									<td className="cui-map-chart__legend-cell cui-map-chart__legend-cell--value">
+										{item.datum.value.toLocaleString()}
+									</td>
+									<td className="cui-map-chart__legend-cell cui-map-chart__legend-cell--share">
+										{(item.share * 100).toFixed(1)}%
+									</td>
+								</tr>
+							);
+						})}
+					</tbody>
+				</table>
+			)}
 			{legend === 'scale' && (
 				<div
 					className="cui-map-chart__legend-scale-wrap"

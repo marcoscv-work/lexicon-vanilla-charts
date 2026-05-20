@@ -15,12 +15,17 @@ const meta: Meta<typeof PieChart> = {
 			options: ['md', 'lg'],
 		},
 		innerRadius: {control: {type: 'range', min: 0, max: 0.95, step: 0.05}},
+		legend: {
+			control: {type: 'inline-radio'},
+			options: ['list', 'table', 'none'],
+		},
 	},
 	args: {
 		title: 'Traffic by source',
 		animated: true,
 		size: 'md',
 		thickness: 'md',
+		legend: 'list',
 	},
 };
 
@@ -105,6 +110,18 @@ export const Sizes: Story = {
 	},
 };
 
+export const Solid: Story = {
+	args: {data: sample, innerRadius: 0, title: 'Traffic by source · solid'},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'`innerRadius={0}` collapses the donut hole and renders a classic solid pie. The centre label / hover summary are gated on `rInner > 0`, so they disappear automatically in this mode — slice info still surfaces via the legend and per-slice `aria-label`.',
+			},
+		},
+	},
+};
+
 export const Thickness: Story = {
 	args: {data: sample},
 	render: (args) => (
@@ -157,6 +174,43 @@ export const ReducedMotion: Story = {
 			description: {
 				story:
 					'This story flips the global `reducedMotion` toggle on, which adds `c-prefers-reduced-motion` to `<body>`. The slice reveal and hover transitions are suppressed at the CSS level via the same body-class rule the React hook reacts to.',
+			},
+		},
+	},
+};
+
+export const LegendTable: Story = {
+	args: {
+		data: [
+			{label: 'Spain', value: 320},
+			{label: 'France', value: 280},
+			{label: 'Germany', value: 260},
+			{label: 'Italy', value: 220},
+			{label: 'Portugal', value: 140},
+			{label: 'Netherlands', value: 120},
+			{label: 'Belgium', value: 80},
+			{label: 'Other EU', value: 60},
+		],
+		title: 'Revenue by country',
+		legend: 'table',
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'`legend="table"` renders a Google-Analytics-style detail table BELOW the chart: rank, swatch, label, value and share of total. Real semantic `<table>` with `<th scope="col">` headers and `<th scope="row">` on the label, same a11y guarantees as the MapChart equivalent. The per-datum sr-only summary is suppressed in this mode.',
+			},
+		},
+	},
+};
+
+export const LegendNone: Story = {
+	args: {data: sample, legend: 'none'},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'`legend="none"` hides the legend entirely. The per-slice `aria-label` (and the hover/focus center label) keep the data available without the right-hand grid.',
 			},
 		},
 	},

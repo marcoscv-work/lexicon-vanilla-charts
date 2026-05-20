@@ -24,6 +24,20 @@ export interface PieDatum {
 export type PieChartSize = 'xs' | 'sm' | 'md' | 'lg';
 export type PieChartThickness = 'md' | 'lg';
 
+/**
+ * Legend layout.
+ *
+ * - `list` (default): the slim swatch/label/% grid that's been the
+ *   PieChart's default since v0 — sits to the right of the chart (or
+ *   below at narrow widths).
+ * - `table`: a Google-Analytics-style detail table BELOW the chart
+ *   with rank, colour swatch, label, value and share of total. Real
+ *   semantic `<table>`; suppresses the per-datum sr-only summary so
+ *   screen readers don't hear the data twice.
+ * - `none`: no legend.
+ */
+export type PieChartLegend = 'list' | 'table' | 'none';
+
 const SIZE_PRESETS: Record<PieChartSize, number> = {
 	xs: 160,
 	sm: 220,
@@ -58,6 +72,8 @@ export interface PieChartProps {
 	 * `thickness` when provided. `0` renders a solid pie.
 	 */
 	innerRadius?: number;
+	/** Legend layout. See `PieChartLegend`. Default `list`. */
+	legend?: PieChartLegend;
 	/** Accessible name for the chart as a whole. */
 	title: string;
 	/** Optional long description, announced after the title. */
@@ -78,6 +94,7 @@ export function PieChart({
 	size = 'md',
 	thickness = 'md',
 	innerRadius,
+	legend = 'list',
 	title,
 	description,
 	animated = true,
@@ -137,13 +154,34 @@ export function PieChart({
 	}, [activeIndex, data, total]);
 
 	const summary = useMemo(() => {
+		// `legend="table"` renders a real semantic <table> below the
+		// chart — that is the screen-reader-friendly representation in
+		// that mode, so we skip the per-datum dump to avoid duplication.
+		if (legend === 'table') return description ?? '';
 		const parts = data.map((d, i) => {
 			const pct = total === 0 ? 0 : (d.value / total) * 100;
 			const label = d.description ?? `${d.label}: ${d.value} (${pct.toFixed(1)}%)`;
 			return `${i + 1} of ${data.length}, ${label}`;
 		});
 		return [description, ...parts].filter(Boolean).join('. ');
-	}, [data, total, description]);
+	}, [data, total, description, legend]);
+
+	// Per-slice ranked rows (sorted by value desc) used by both
+	// `legend="list"` (when we want a sorted view) and `legend="table"`.
+	// For the legend list we still iterate `data` in its original order
+	// for backwards compatibility — only the table reorders.
+	const tableRows = useMemo(() => {
+		if (legend !== 'table') return [];
+		return data
+			.map((d, i) => ({
+				datum: d,
+				dataIndex: i,
+				color: colors[i],
+				share: total === 0 ? 0 : d.value / total,
+			}))
+			.sort((a, b) => b.datum.value - a.datum.value)
+			.map((row, sortedIdx) => ({...row, rank: sortedIdx + 1}));
+	}, [data, colors, total, legend]);
 
 	const focusSlice = useCallback((idx: number) => {
 		const el = sliceRefs.current[idx];
@@ -188,6 +226,7 @@ export function PieChart({
 			className={[
 				'cui-pie-chart',
 				`cui-pie-chart--size-${typeof size === 'string' ? size : 'custom'}`,
+				`cui-pie-chart--legend-${legend}`,
 				motionOn && 'cui-pie-chart--motion',
 				className,
 			]
@@ -328,41 +367,132 @@ export function PieChart({
 						</div>
 					)}
 				</div>
-				<ul className="cui-pie-chart__legend" aria-hidden="true">
-					{data.map((d, i) => {
-						const pct = total === 0 ? 0 : (d.value / total) * 100;
-						return (
-							<li
-								key={`${d.label}-${i}`}
-								className={[
-									'cui-pie-chart__legend-item',
-									activeIndex === i && 'is-active',
-								]
-									.filter(Boolean)
-									.join(' ')}
-								onMouseEnter={() => setHoverIndex(i)}
-								onMouseLeave={() =>
-									setHoverIndex((cur) =>
-										cur === i ? null : cur
-									)
-								}
-								onClick={() => focusSlice(i)}
-							>
-								<span
-									className="cui-pie-chart__legend-swatch"
-									style={{background: colors[i]}}
-								/>
-								<span className="cui-pie-chart__legend-label">
-									{d.label}
-								</span>
-								<span className="cui-pie-chart__legend-value">
-									{pct.toFixed(1)}%
-								</span>
-							</li>
-						);
-					})}
-				</ul>
+				{legend === 'list' && (
+					<ul className="cui-pie-chart__legend" aria-hidden="true">
+						{data.map((d, i) => {
+							const pct =
+								total === 0 ? 0 : (d.value / total) * 100;
+							return (
+								<li
+									key={`${d.label}-${i}`}
+									className={[
+										'cui-pie-chart__legend-item',
+										activeIndex === i && 'is-active',
+									]
+										.filter(Boolean)
+										.join(' ')}
+									onMouseEnter={() => setHoverIndex(i)}
+									onMouseLeave={() =>
+										setHoverIndex((cur) =>
+											cur === i ? null : cur
+										)
+									}
+									onClick={() => focusSlice(i)}
+								>
+									<span
+										className="cui-pie-chart__legend-swatch"
+										style={{background: colors[i]}}
+									/>
+									<span className="cui-pie-chart__legend-label">
+										{d.label}
+									</span>
+									<span className="cui-pie-chart__legend-value">
+										{pct.toFixed(1)}%
+									</span>
+								</li>
+							);
+						})}
+					</ul>
+				)}
 			</div>
+			{legend === 'table' && (
+				<table
+					className="cui-pie-chart__legend-table"
+					aria-labelledby={titleId}
+				>
+					<thead>
+						<tr>
+							<th
+								scope="col"
+								className="cui-pie-chart__legend-table-th cui-pie-chart__legend-table-th--rank"
+							>
+								#
+							</th>
+							<th
+								scope="col"
+								className="cui-pie-chart__legend-table-th cui-pie-chart__legend-table-th--color"
+							>
+								<span className="cui-sr-only">Colour</span>
+							</th>
+							<th
+								scope="col"
+								className="cui-pie-chart__legend-table-th cui-pie-chart__legend-table-th--label"
+							>
+								Label
+							</th>
+							<th
+								scope="col"
+								className="cui-pie-chart__legend-table-th cui-pie-chart__legend-table-th--value"
+							>
+								Value
+							</th>
+							<th
+								scope="col"
+								className="cui-pie-chart__legend-table-th cui-pie-chart__legend-table-th--share"
+							>
+								Share
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						{tableRows.map((row) => {
+							const isActive = activeIndex === row.dataIndex;
+							return (
+								<tr
+									key={`${row.datum.label}-${row.dataIndex}`}
+									className={[
+										'cui-pie-chart__legend-row',
+										isActive && 'is-active',
+									]
+										.filter(Boolean)
+										.join(' ')}
+									onMouseEnter={() =>
+										setHoverIndex(row.dataIndex)
+									}
+									onMouseLeave={() =>
+										setHoverIndex((cur) =>
+											cur === row.dataIndex ? null : cur
+										)
+									}
+									onClick={() => focusSlice(row.dataIndex)}
+								>
+									<td className="cui-pie-chart__legend-cell cui-pie-chart__legend-cell--rank">
+										{row.rank}
+									</td>
+									<td className="cui-pie-chart__legend-cell cui-pie-chart__legend-cell--color">
+										<span
+											className="cui-pie-chart__legend-swatch"
+											style={{background: row.color}}
+										/>
+									</td>
+									<th
+										scope="row"
+										className="cui-pie-chart__legend-cell cui-pie-chart__legend-cell--label"
+									>
+										{row.datum.label}
+									</th>
+									<td className="cui-pie-chart__legend-cell cui-pie-chart__legend-cell--value">
+										{row.datum.value.toLocaleString()}
+									</td>
+									<td className="cui-pie-chart__legend-cell cui-pie-chart__legend-cell--share">
+										{(row.share * 100).toFixed(1)}%
+									</td>
+								</tr>
+							);
+						})}
+					</tbody>
+				</table>
+			)}
 		</figure>
 	);
 }

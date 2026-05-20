@@ -191,10 +191,12 @@
 	}
 
 	&__legend-swatch {
+		display: inline-block;
 		width: 12px;
 		height: 12px;
 		border-radius: 2px;
 		border: 1px solid var(--dark-d1);
+		vertical-align: middle;
 	}
 
 	&__legend-list .cui-map-chart__legend-label {
@@ -206,6 +208,122 @@
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
 		color: var(--dark);
+	}
+
+	// --- Legend: GA-style detail table (legend="table") ---------------------
+	// Sits BELOW the canvas (full row of the figure) — the table is the
+	// primary representation in this mode, and the map plays the visual
+	// support role. Real semantic <table>: column headers, row headers
+	// on the country name, screen-reader accessible.
+	&__legend-table {
+		width: 100%;
+		max-width: 720px;
+		margin-top: 1rem;
+		border-collapse: collapse;
+		font-size: 0.8125rem;
+		color: var(--dark);
+		font-variant-numeric: tabular-nums;
+	}
+
+	&__legend-table-th {
+		text-align: left;
+		font-weight: 600;
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+		color: var(--dark);
+		opacity: 0.7;
+		padding: 0.375rem 0.625rem;
+		border-bottom: 1px solid var(--light-d1);
+		white-space: nowrap;
+
+		&--rank {
+			width: 2.5rem;
+			text-align: right;
+		}
+
+		&--color {
+			width: 1.5rem;
+			padding-left: 0;
+			padding-right: 0;
+		}
+
+		&--value,
+		&--share {
+			text-align: right;
+		}
+
+		&--share {
+			width: 5rem;
+		}
+	}
+
+	&__legend-row {
+		cursor: pointer;
+		transition:
+			background 140ms ease,
+			color 140ms ease;
+
+		&:hover {
+			background: var(--light);
+		}
+
+		&.is-active {
+			background: var(--primary);
+			color: var(--white);
+
+			.cui-map-chart__legend-swatch {
+				border-color: var(--white);
+			}
+
+			.cui-map-chart__legend-cell--label,
+			.cui-map-chart__legend-cell {
+				color: var(--white);
+			}
+		}
+	}
+
+	&__legend-cell {
+		padding: 0.375rem 0.625rem;
+		border-bottom: 1px solid var(--light-d1);
+		font-weight: 400;
+		color: var(--dark);
+
+		&--rank {
+			text-align: right;
+			// 0.75 keeps the rank visually subordinated while still
+			// clearing WCAG AA contrast (≥ 4.5:1) on the white surface.
+			// 0.6 read as 4.04:1 against `--dark` — the axe scan flagged
+			// it.
+			opacity: 0.75;
+			width: 2.5rem;
+		}
+
+		&--color {
+			width: 1.5rem;
+			padding-left: 0;
+			padding-right: 0;
+			vertical-align: middle;
+		}
+
+		&--label {
+			// `<th scope="row">` defaults to centred text in browsers —
+			// override so the row header reads as plain left-aligned
+			// content like the rest of the table.
+			text-align: left;
+			font-weight: 500;
+		}
+
+		&--value {
+			text-align: right;
+			font-weight: 700;
+		}
+
+		&--share {
+			text-align: right;
+			opacity: 0.8;
+			width: 5rem;
+		}
 	}
 
 	// --- Motion -------------------------------------------------------------

@@ -161,4 +161,96 @@ export const CHART_FAMILY_ORDER: ReadonlyArray<ChartFamily> = [
 	'indigo',
 ];
 
+/**
+ * Secondary categorical slots used by `getAccessibleSeries(n)` once the
+ * 10 base families above are exhausted. Same hue order, one shade
+ * darker (the `Color.Charts.{Family}.{family}-d2` tokens), so a chart
+ * with 11–20 series doesn't loop colours immediately and adjacent
+ * darker/lighter siblings remain visually distinguishable.
+ *
+ * Every entry is an already-existing Clay/Lexicon chart token — no new
+ * hexes invented here, only a different shade picked from the same
+ * family.
+ */
+export interface ChartExtendedEntry {
+	family: ChartFamily;
+	color: string;
+	cssVar: string;
+	hexValue: string;
+	tokenPath: string;
+}
+
+export const CHART_EXTENDED_PALETTE: ReadonlyArray<ChartExtendedEntry> = [
+	{
+		family: 'blue',
+		color: 'var(--blue-d2)',
+		cssVar: '--blue-d2',
+		hexValue: '#005FCC',
+		tokenPath: 'Color.Charts.Blue.blue-d2',
+	},
+	{
+		family: 'yellow',
+		color: 'var(--yellow-d2)',
+		cssVar: '--yellow-d2',
+		hexValue: '#CC9600',
+		tokenPath: 'Color.Charts.Yellow.yellow-d2',
+	},
+	{
+		family: 'red',
+		color: 'var(--red-d2)',
+		cssVar: '--red-d2',
+		hexValue: '#B30000',
+		tokenPath: 'Color.Charts.Red.red-d2',
+	},
+	{
+		family: 'green',
+		color: 'var(--green-d2)',
+		cssVar: '--green-d2',
+		hexValue: '#2E590D',
+		tokenPath: 'Color.Charts.Green.green-d2',
+	},
+	{
+		family: 'purple',
+		color: 'var(--purple-d2)',
+		cssVar: '--purple-d2',
+		hexValue: '#9500FF',
+		tokenPath: 'Color.Charts.Purple.purple-d2',
+	},
+	{
+		family: 'teal',
+		color: 'var(--teal-d2)',
+		cssVar: '--teal-d2',
+		hexValue: '#125449',
+		tokenPath: 'Color.Charts.Teal.teal-d2',
+	},
+	{
+		family: 'pink',
+		color: 'var(--pink-d2)',
+		cssVar: '--pink-d2',
+		hexValue: '#B30065',
+		tokenPath: 'Color.Charts.Pink.pink-d2',
+	},
+	{
+		family: 'orange',
+		color: 'var(--orange-d2)',
+		cssVar: '--orange-d2',
+		hexValue: '#993B00',
+		tokenPath: 'Color.Charts.Orange.orange-d2',
+	},
+	{
+		family: 'cyan',
+		color: 'var(--cyan-d2)',
+		cssVar: '--cyan-d2',
+		hexValue: '#005580',
+		tokenPath: 'Color.Charts.Cyan.cyan-d2',
+	},
+	{
+		family: 'indigo',
+		color: 'var(--indigo-d2)',
+		cssVar: '--indigo-d2',
+		hexValue: '#1A30FF',
+		tokenPath: 'Color.Charts.Indigo.indigo-d2',
+	},
+];
+
 export const DEFAULT_DIVIDER = NEUTRAL.white;

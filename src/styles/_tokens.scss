@@ -44,4 +44,20 @@
 	--blue-d4: #004799;
 	--blue-l2: #66abff;
 	--blue-l4: #cce3ff;
+
+	// --- Extended categorical palette (darker secondary set) ----------------
+	// `getAccessibleSeries(n)` cycles the 10 base hues first, then these
+	// 10 darker (`-d2`) shades, so charts with > 10 series don't repeat
+	// colours immediately. Names + hexes mirror `Color.Charts.{Family}`
+	// tokens in `Light.tokens.json` exactly. (`--blue-d2` is already
+	// declared above for MapChart's monochrome scheme.)
+	--yellow-d2: #cc9600;
+	--red-d2: #b30000;
+	--green-d2: #2e590d;
+	--purple-d2: #9500ff;
+	--teal-d2: #125449;
+	--pink-d2: #b30065;
+	--orange-d2: #993b00;
+	--cyan-d2: #005580;
+	--indigo-d2: #1a30ff;
 }

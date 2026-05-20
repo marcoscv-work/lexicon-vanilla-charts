@@ -16,7 +16,7 @@ const meta: Meta<typeof MapChart> = {
 		},
 		legend: {
 			control: {type: 'inline-radio'},
-			options: ['scale', 'list', 'none'],
+			options: ['scale', 'list', 'table', 'none'],
 		},
 		variant: {
 			control: {type: 'inline-radio'},
@@ -232,6 +232,30 @@ export const Responsive: Story = {
 			description: {
 				story:
 					'The SVG uses `viewBox` + `width: 100%; height: auto`, so the map scales fluidly with its container. Drag the bottom-right corner of the wrapper to shrink it.',
+			},
+		},
+	},
+};
+
+export const LegendTable: Story = {
+	args: {data: sample, legend: 'table', scheme: 'blue'},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'`legend="table"` renders a Google-Analytics-style detail table BELOW the map: rank, colour swatch, country, value and share of total. The table is the primary representation — it is a real semantic `<table>` with `<th scope="col">` headers and `<th scope="row">` on each country name, so screen readers read it as a proper data table. The per-datum sr-only summary is suppressed in this mode to avoid duplication. Rows are clickable and sync the active state with the map.',
+			},
+		},
+	},
+};
+
+export const LegendTableCategorical: Story = {
+	args: {data: sample, legend: 'table', scheme: 'categorical'},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'Same table legend with the categorical scheme — the swatch column reflects the bucket colour so the row reads consistently with the country fill on the map above.',
 			},
 		},
 	},
