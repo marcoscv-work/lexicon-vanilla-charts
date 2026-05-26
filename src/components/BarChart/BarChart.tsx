@@ -210,14 +210,18 @@ export function BarChart({
 				height={height}
 				focusable="false"
 			>
-				{/* axis baseline */}
-				<line
-					x1={pad.left}
-					y1={isVertical ? height - pad.bottom : pad.top}
-					x2={isVertical ? width - pad.right : pad.left}
-					y2={height - pad.bottom}
-					className="cui-bar-chart__axis"
-				/>
+				{/* axis baseline — hidden in `size="inline"` since the row
+				    has no axis to anchor (the track, when present, plays
+				    that role). */}
+				{size !== 'inline' && (
+					<line
+						x1={pad.left}
+						y1={isVertical ? height - pad.bottom : pad.top}
+						x2={isVertical ? width - pad.right : pad.left}
+						y2={height - pad.bottom}
+						className="cui-bar-chart__axis"
+					/>
+				)}
 				{data.map((d, i) => {
 					const ratio = max === 0 ? 0 : d.value / max;
 					const length = ratio * (isVertical ? plotH : plotW);
