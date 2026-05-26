@@ -18,12 +18,21 @@ const meta: Meta<typeof BarChart> = {
 			control: {type: 'inline-radio'},
 			options: ['list', 'table', 'none'],
 		},
+		size: {
+			control: {type: 'inline-radio'},
+			options: ['default', 'inline'],
+		},
+		track: {control: {type: 'boolean'}},
+		rounded: {control: {type: 'boolean'}},
 	},
 	args: {
 		title: 'Quarterly revenue (€k)',
 		animated: true,
 		scheme: 'blue',
 		legend: 'none',
+		size: 'default',
+		track: false,
+		rounded: false,
 	},
 };
 
@@ -160,6 +169,74 @@ export const LegendList: Story = {
 			description: {
 				story:
 					'`legend="list"` renders the compact swatch/label/% grid below the chart, matching PieChart\'s default legend. Useful when paired with `scheme="categorical"` so the swatches surface the per-bar hue mapping.',
+			},
+		},
+	},
+};
+
+export const Inline: Story = {
+	args: {
+		data: [{label: 'Progress', value: 62}],
+		orientation: 'horizontal',
+		size: 'inline',
+		track: true,
+		rounded: true,
+		width: 480,
+		height: 32,
+		title: 'Storage used',
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'`size="inline"` flattens every bar to 8px regardless of band size. Pair with `track` to draw a `--light-d1` background spanning the full plot length, and `rounded` to pill-cap both. The three props are independent — combine to taste.',
+			},
+		},
+	},
+};
+
+export const InlineMultiple: Story = {
+	args: {
+		data: [
+			{label: 'Storage', value: 62},
+			{label: 'Bandwidth', value: 28},
+			{label: 'API calls', value: 91},
+			{label: 'Seats', value: 45},
+		],
+		orientation: 'horizontal',
+		size: 'inline',
+		track: true,
+		rounded: true,
+		width: 560,
+		height: 160,
+		title: 'Quota usage',
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'Same inline mode applied to several rows — each row keeps its label on the left and value on the right, but the bar is a thin 8px row over a shared-style gray track. Useful for dashboard quota lists.',
+			},
+		},
+	},
+};
+
+export const InlineSquare: Story = {
+	args: {
+		data: [{label: 'Progress', value: 62}],
+		orientation: 'horizontal',
+		size: 'inline',
+		track: true,
+		rounded: false,
+		width: 480,
+		height: 32,
+		title: 'Storage used (square ends)',
+	},
+	parameters: {
+		docs: {
+			description: {
+				story:
+					'`rounded={false}` keeps the default 2px corner radius on both bar and track. `track` and `size` work independently of `rounded`, so consumers can mix-and-match.',
 			},
 		},
 	},

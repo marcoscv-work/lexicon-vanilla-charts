@@ -38,6 +38,14 @@
 		outline: none;
 	}
 
+	// Optional gray track behind the bar (track={true}). Spans the full
+	// plot length so the row reads as "progress out of total". Static —
+	// the reveal animation only plays on the bar, not the track.
+	&__bar-track {
+		fill: var(--light-d1);
+		pointer-events: none;
+	}
+
 	// --- Active emphasis ----------------------------------------------------
 	// Blue mode: darken to `--primary` (the existing behaviour).
 	&--blue &__bar-group.is-active .cui-bar-chart__bar {

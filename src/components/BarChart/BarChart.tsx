@@ -46,6 +46,28 @@ export interface BarChartProps {
 	scheme?: BarChartScheme;
 	/** Legend layout. See `BarChartLegend`. Default `none`. */
 	legend?: BarChartLegend;
+	/**
+	 * Bar thickness preset.
+	 *
+	 * - `default`: bars fill ~60% of their band (the existing layout).
+	 * - `inline`: every bar is a flat 8px regardless of band size — the
+	 *   progress-bar-style row. Pairs naturally with `track` and
+	 *   `rounded` and is intended for horizontal orientation, though
+	 *   the prop is honoured for vertical too.
+	 */
+	size?: 'default' | 'inline';
+	/**
+	 * Show a light-gray track behind each bar that spans the full plot
+	 * length. Lets the row read as "x out of full" even when the bar is
+	 * short. Off by default.
+	 */
+	track?: boolean;
+	/**
+	 * Round the bar (and the matching track, when enabled) into a pill.
+	 * When off, bars use the default 2px corner radius. Independent of
+	 * `size` so consumers can pick either look.
+	 */
+	rounded?: boolean;
 	/** Width of the SVG viewport. */
 	width?: number;
 	/** Height of the SVG viewport. */
@@ -68,6 +90,9 @@ export function BarChart({
 	orientation = 'vertical',
 	scheme = 'blue',
 	legend = 'none',
+	size = 'default',
+	track = false,
+	rounded = false,
 	width = 480,
 	height = 280,
 	title,
@@ -122,7 +147,8 @@ export function BarChart({
 
 	const isVertical = orientation === 'vertical';
 	const bandSize = (isVertical ? plotW : plotH) / Math.max(1, data.length);
-	const barThickness = Math.max(4, bandSize * 0.6);
+	const barThickness = size === 'inline' ? 8 : Math.max(4, bandSize * 0.6);
+	const barRx = rounded ? barThickness / 2 : 2;
 
 	const summaryText = useMemo(() => {
 		// `legend="table"` renders a real semantic <table> below the
@@ -161,6 +187,9 @@ export function BarChart({
 				`cui-bar-chart--${orientation}`,
 				`cui-bar-chart--${scheme}`,
 				`cui-bar-chart--legend-${legend}`,
+				`cui-bar-chart--size-${size}`,
+				track && 'cui-bar-chart--track',
+				rounded && 'cui-bar-chart--rounded',
 				motionOn && 'cui-bar-chart--motion',
 				className,
 			]
@@ -206,6 +235,15 @@ export function BarChart({
 
 					const isActive = focusIndex === i || hoverIndex === i;
 
+					// Track sits behind the bar and spans the full plot length
+					// (height for vertical, width for horizontal). Same
+					// thickness / radius as the bar so the active fill reads as
+					// "progress along this row".
+					const trackX = isVertical ? x : pad.left;
+					const trackY = isVertical ? pad.top : y;
+					const trackW = isVertical ? w : plotW;
+					const trackH = isVertical ? plotH : h;
+
 					return (
 						<g
 							key={`${d.label}-${i}`}
@@ -216,6 +254,16 @@ export function BarChart({
 								.filter(Boolean)
 								.join(' ')}
 						>
+							{track && (
+								<rect
+									className="cui-bar-chart__bar-track"
+									x={trackX}
+									y={trackY}
+									width={trackW}
+									height={trackH}
+									rx={barRx}
+								/>
+							)}
 							<rect
 								ref={(el) => {
 									barRefs.current[i] = el;
@@ -225,7 +273,7 @@ export function BarChart({
 								y={y}
 								width={w}
 								height={h}
-								rx={2}
+								rx={barRx}
 								style={
 									{
 										'--cui-bar-delay': `${i * 60}ms`,
