@@ -74,6 +74,9 @@ import {BarChart, LineChart, PieChart, MapChart} from '@clayui/charts';
 | `orientation` | `'vertical' \| 'horizontal'` | `'vertical'` | |
 | `scheme` | `'blue' \| 'categorical'` | `'blue'` | `categorical` reads per-bar hues from `getAccessibleSeries(n)`; the active-state uses `filter: brightness/saturate` so the per-bar colour is preserved instead of flattening to `--primary`. |
 | `legend` | `'list' \| 'table' \| 'none'` | `'none'` | Legend below the SVG. `list` mirrors PieChart's compact grid; `table` is the GA-style detail table (see below). Defaults to `none` because axis labels already name each bar. |
+| `size` | `'default' \| 'inline'` | `'default'` | `'inline'` flattens every bar to a fixed 8 px regardless of band size — the progress-bar-style row. Hides the axis baseline (a single-row chart has nothing to anchor). Pairs naturally with `track` and `rounded`; works in both orientations though it's designed for horizontal. |
+| `track` | `boolean` | `false` | Draws a `--light-d1` rect behind each bar that spans the full plot length, so the row reads as "value out of total" even when the bar is short. Static — the reveal animation only runs on the bar. |
+| `rounded` | `boolean` | `false` | Rounds bar (and track) ends into a pill — `rx = thickness/2`. Independent of `size`, so consumers can mix-and-match: default-thickness rounded, inline square-ended, etc. |
 | `width`, `height` | `number` | `480 × 280` | Pixel viewport. |
 | `title` | `string` | – | Accessible name (`<figcaption>`). |
 | `description` | `string` | (auto from data) | Long description, read by AT. Suppressed when `legend='table'`. |
@@ -90,6 +93,33 @@ Behaviour highlights:
   `c-prefers-reduced-motion` body class.
 - When a legend is opted in, the figure switches from `inline-block` to
   `block` so the legend can flow under the SVG.
+
+```tsx
+// Single progress row — the pattern in the screenshots.
+<BarChart
+  title="Storage used"
+  orientation="horizontal"
+  size="inline"
+  track
+  rounded
+  data={[{label: 'Progress', value: 62}]}
+/>
+
+// Several rows sharing the same gray track.
+<BarChart
+  title="Quota usage"
+  orientation="horizontal"
+  size="inline"
+  track
+  rounded
+  data={[
+    {label: 'Storage', value: 62},
+    {label: 'Bandwidth', value: 28},
+    {label: 'API calls', value: 91},
+    {label: 'Seats', value: 45},
+  ]}
+/>
+```
 
 ### `<MapChart>`
 
@@ -400,6 +430,9 @@ order MapChart → LineChart → PieChart → BarChart (set in
 - **BarChart** — `Vertical`, `Horizontal`, `ManyBars`, `Categorical`,
   `CategoricalManyBars` (20 series, demos the extended palette),
   `CategoricalHorizontal`, `LegendList`, `LegendTable`,
+  `Inline` (single 8 px row + track + pill ends), `InlineMultiple`
+  (the same applied to a quota-usage list), `InlineSquare`
+  (`rounded={false}` to see the 2 px corner default),
   `ReducedMotion`.
 
 The preview toolbar has a **Reduced motion** toggle that flips

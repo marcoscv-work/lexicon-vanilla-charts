@@ -276,7 +276,36 @@ must be an already-existing Clay/Lexicon chart token — pick a shade
 from `Color.Charts.{Family}` in `Light.tokens.json` rather than
 inventing a hex.
 
-### 13. The choropleth variant is experimental and self-contained
+### 13. `size='inline'` hides the axis baseline by design
+
+BarChart paints a 1 px `--light-d2` axis baseline anchoring the bars
+(`y=height-pad.bottom` in vertical, `x=pad.left` in horizontal). At
+`size='inline'`, the chart is a single thin row with no notion of an
+axis — the optional gray `track` plays that role instead. Rendering
+the baseline in inline mode shows up as a stray vertical tick at the
+left edge of the bar (the user-reported "línea inicial gris").
+
+**Therefore**: the axis `<line>` is rendered only when `size !==
+'inline'`. If you add new size presets in the future and they too
+should drop the axis (`'sparkline'`, `'micro'`, …) extend the guard
+rather than relabelling the existing check.
+
+### 14. `track` is decorative, not data — animate the bar only
+
+The `<rect className="cui-bar-chart__bar-track">` is not in the focus
+order, has `pointer-events: none`, and carries no `role` / `aria-label`.
+It also is **not** targeted by the `cui-bar-rise` / `cui-bar-grow-x`
+animations — the reveal only plays on the bar. If the track animated
+alongside, the row would feel like the data is filling up *and* the
+canvas is appearing, which fights the "x out of total" reading. Same
+reasoning when the track ever gains hover/focus state in the future:
+don't.
+
+`rounded` is independent of both `size` and `track` — it just sets
+`rx = thickness/2` on whatever rects exist (bar always, track when
+enabled). Keep it that way; consumers ask for the three independently.
+
+### 15. The choropleth variant is experimental and self-contained
 
 `<MapChart variant='choropleth' />` is gated behind a prop, with the
 whole implementation in three isolated files:
@@ -339,6 +368,9 @@ new stories.
   `CHART_EXTENDED_PALETTE` — append only.
 - Don't entangle `MapChartChoropleth` code into `MapChart`. The
   variant prop is the seam.
+- Don't render the BarChart axis line in `size='inline'`, and don't
+  push focus / hover state onto the `__bar-track` rect — see rules
+  13 and 14.
 - Animations must be gated by both the React hook and a CSS fallback.
 - New chart components with a `legend='table'` variant must suppress
   the per-datum `aria-describedby` summary in that mode.
